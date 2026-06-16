@@ -3,182 +3,375 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Panini Maé & Robin manquants</title>
+  <title>Panini Maé & Robin - Manquants</title>
   <style>
     :root{
-      --green:#11a85b;
-      --green2:#1fd06d;
-      --blue:#24358f;
-      --blue2:#17215d;
+      --blue:#17215d;
+      --blue2:#24358f;
       --red:#e51d2a;
-      --gold:#f7c948;
-      --cream:#fff7e8;
-      --ink:#171821;
-      --muted:#6b7280;
+      --green:#16b36a;
+      --teal:#1aa6a3;
+      --gold:#ffc928;
+      --cream:#fff8df;
+      --ink:#111827;
+      --muted:#657084;
       --card:#ffffff;
-      --line:rgba(255,255,255,.18);
+      --line:rgba(255,255,255,.22);
+      --shadow:0 24px 70px rgba(0,0,0,.35);
+      --radius:26px;
     }
+
     *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
     body{
       margin:0;
       min-height:100vh;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color:var(--ink);
+      color:#fff;
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background:
-        radial-gradient(circle at 10% 10%, rgba(31,208,109,.35), transparent 26%),
-        radial-gradient(circle at 90% 0%, rgba(229,29,42,.35), transparent 28%),
-        radial-gradient(circle at 50% 110%, rgba(247,201,72,.28), transparent 30%),
-        linear-gradient(135deg, #111943 0%, #1e2f8a 46%, #0d6b43 100%);
-      padding:28px;
+        radial-gradient(circle at 82% 12%, rgba(229,29,42,.55), transparent 28%),
+        radial-gradient(circle at 10% 15%, rgba(22,179,106,.45), transparent 25%),
+        linear-gradient(135deg, #071735 0%, #182174 45%, #123e58 100%);
+      overflow-x:hidden;
     }
-    .wrap{max-width:1120px;margin:0 auto}
-    header{
+
+    body:before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      opacity:.18;
+      background-image:
+        linear-gradient(90deg, rgba(255,255,255,.16) 1px, transparent 1px),
+        linear-gradient(rgba(255,255,255,.12) 1px, transparent 1px);
+      background-size:72px 72px;
+      mask-image:linear-gradient(to bottom, black, transparent 72%);
+    }
+
+    .wrap{width:min(1180px, calc(100% - 34px)); margin:0 auto; padding:34px 0 54px; position:relative; z-index:1}
+
+    .hero{
       position:relative;
       overflow:hidden;
-      border:1px solid var(--line);
-      border-radius:30px;
-      padding:32px;
-      color:white;
+      border-radius:34px;
+      padding:38px 42px 32px;
+      min-height:340px;
+      box-shadow:var(--shadow);
+      border:1px solid rgba(255,255,255,.24);
       background:
-        linear-gradient(120deg, rgba(255,255,255,.13), rgba(255,255,255,.04)),
-        linear-gradient(135deg, rgba(229,29,42,.95), rgba(36,53,143,.9) 48%, rgba(17,168,91,.94));
-      box-shadow:0 24px 80px rgba(0,0,0,.35);
+        radial-gradient(circle at 96% 10%, rgba(255,255,255,.22) 0 12%, transparent 13%),
+        linear-gradient(135deg, rgba(229,29,42,.92), rgba(36,53,143,.9) 46%, rgba(22,179,106,.94));
     }
-    header:before{
+    .hero:before{
       content:"";
-      position:absolute; inset:-80px -60px auto auto;
-      width:260px; height:260px;
+      position:absolute;
+      right:-30px;
+      top:-70px;
+      width:320px;
+      height:320px;
+      border:34px solid rgba(255,255,255,.18);
       border-radius:50%;
-      border:28px solid rgba(255,255,255,.14);
     }
-    header:after{
-      content:"⚽";
-      position:absolute; right:34px; bottom:20px;
-      font-size:72px;
-      filter:drop-shadow(0 10px 20px rgba(0,0,0,.25));
-      opacity:.92;
+    .hero:after{
+      content:"";
+      position:absolute;
+      left:-120px;
+      bottom:-190px;
+      width:430px;
+      height:430px;
+      border:2px solid rgba(255,255,255,.13);
+      border-radius:50%;
     }
-    .kicker{font-weight:900;letter-spacing:.18em;text-transform:uppercase;font-size:13px;opacity:.9}
-    h1{font-size:clamp(38px,7vw,78px);line-height:.88;margin:12px 0 12px;font-weight:1000;letter-spacing:-.06em;text-transform:uppercase}
-    .subtitle{font-size:18px;max-width:680px;opacity:.95;margin:0}
-    .stats{display:flex;gap:14px;flex-wrap:wrap;margin-top:26px}
-    .stat{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.24);backdrop-filter:blur(10px);border-radius:18px;padding:14px 18px;min-width:150px}
-    .stat b{display:block;font-size:30px;line-height:1}.stat span{font-size:12px;text-transform:uppercase;letter-spacing:.08em;opacity:.85}
-    .toolbar{display:flex;gap:12px;align-items:center;margin:22px 0;flex-wrap:wrap}
-    .search{flex:1;min-width:240px;border:0;border-radius:16px;padding:16px 18px;font-size:16px;box-shadow:0 12px 36px rgba(0,0,0,.22)}
-    .pill{border:1px solid rgba(255,255,255,.25);color:white;background:rgba(255,255,255,.12);border-radius:999px;padding:11px 14px;font-weight:800;cursor:pointer}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}
-    .card{background:var(--card);border-radius:22px;padding:18px;box-shadow:0 16px 45px rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.65);position:relative;overflow:hidden}
-    .card:before{content:"";position:absolute;inset:0 0 auto 0;height:7px;background:linear-gradient(90deg,var(--red),var(--gold),var(--green),var(--blue));}
-    .country{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-top:5px;margin-bottom:14px}
-    .country h2{font-size:18px;margin:0;letter-spacing:-.02em}.count{font-size:12px;font-weight:900;color:white;background:var(--blue);border-radius:999px;padding:5px 9px;white-space:nowrap}
-    .stickers{display:flex;gap:8px;flex-wrap:wrap}
-    .num{display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:42px;padding:0 10px;border-radius:14px;background:#f1f3f8;border:1px solid #e5e7eb;font-weight:1000;font-size:17px;cursor:pointer;user-select:none;transition:.15s ease}
-    .num:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(0,0,0,.13)}
-    .num.done{background:#d1fae5;color:#065f46;text-decoration:line-through;opacity:.72}.dibu{background:linear-gradient(135deg,#fff1a8,#f7c948);border-color:#eab308;color:#4a2b00;box-shadow:0 8px 20px rgba(247,201,72,.35)}
-    .dibu:after{content:" DIBU !!!";font-size:11px;margin-left:4px;font-weight:1000}
-    .footer{margin:22px 0 0;text-align:center;color:rgba(255,255,255,.82);font-size:13px}
-    @media(max-width:620px){body{padding:14px}header{padding:24px;border-radius:24px}header:after{font-size:48px;right:22px;bottom:18px}.grid{grid-template-columns:1fr}h1{font-size:45px}.stat{flex:1}}
+
+    .kicker{
+      margin:0 0 14px;
+      font-size:13px;
+      font-weight:1000;
+      letter-spacing:.22em;
+      text-transform:uppercase;
+      color:rgba(255,255,255,.9);
+      text-shadow:0 2px 18px rgba(0,0,0,.2);
+    }
+    h1{
+      margin:0;
+      max-width:720px;
+      font-size:clamp(58px, 9vw, 94px);
+      line-height:.85;
+      letter-spacing:-.07em;
+      text-transform:uppercase;
+      font-weight:1000;
+    }
+    .lead{margin:18px 0 0; font-size:19px; line-height:1.35; max-width:740px; color:rgba(255,255,255,.94)}
+
+    .stats{display:flex; gap:14px; flex-wrap:wrap; margin-top:30px; align-items:stretch}
+    .stat{
+      min-width:144px;
+      padding:16px 18px;
+      border-radius:18px;
+      background:rgba(255,255,255,.16);
+      border:1px solid rgba(255,255,255,.24);
+      backdrop-filter:blur(12px);
+    }
+    .stat strong{display:block; font-size:32px; line-height:1; font-weight:1000}
+    .stat span{display:block; margin-top:6px; font-size:12px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; color:rgba(255,255,255,.78)}
+
+    .progress-area{display:grid; grid-template-columns:1fr auto; gap:18px; align-items:end; margin-top:24px}
+    .progress-label{font-size:13px; font-weight:900; margin-bottom:8px}
+    .bar{height:12px; border-radius:999px; background:rgba(255,255,255,.22); overflow:hidden; border:1px solid rgba(255,255,255,.1)}
+    .bar span{display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--gold),#fff176,var(--green)); border-radius:999px; transition:width .35s ease}
+    .trophy{font-size:52px; filter:drop-shadow(0 8px 12px rgba(0,0,0,.25)); text-align:center}
+    .pct{font-size:14px; font-weight:1000; text-align:center}
+
+    .toolbar{display:grid; grid-template-columns:1fr auto; gap:14px; margin:24px 0 22px; align-items:center}
+    .search{width:100%; border:0; outline:0; border-radius:18px; padding:17px 20px; font-size:17px; background:#fff; color:#111827; box-shadow:0 15px 34px rgba(0,0,0,.18)}
+    .btn{border:1px solid rgba(255,255,255,.26); color:#fff; border-radius:999px; padding:14px 20px; font-weight:1000; background:rgba(255,255,255,.13); cursor:pointer; white-space:nowrap; box-shadow:0 12px 30px rgba(0,0,0,.15)}
+    .btn:hover{background:rgba(255,255,255,.22)}
+
+    .grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:16px}
+    .team{
+      position:relative;
+      min-height:134px;
+      border-radius:22px;
+      background:var(--card);
+      color:var(--ink);
+      padding:22px 20px 18px;
+      box-shadow:0 18px 45px rgba(0,0,0,.18);
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.5);
+    }
+    .team:before{content:""; position:absolute; left:0; right:0; top:0; height:7px; background:linear-gradient(90deg,var(--red),var(--gold),var(--green),var(--teal),var(--blue2))}
+    .team.special{
+      grid-column:1/-1;
+      min-height:142px;
+      background:linear-gradient(135deg, #fff9d6, #fff6b1 48%, #fffdf1);
+      border:2px solid var(--gold);
+      box-shadow:0 0 0 1px rgba(255,201,40,.6), 0 24px 65px rgba(0,0,0,.22);
+    }
+    .team.special:before{height:9px; background:linear-gradient(90deg,var(--gold),#fff,#75aadb,var(--gold))}
+
+    .team-head{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:18px}
+    .country{display:flex; gap:10px; align-items:flex-start; min-width:0}
+    .flag{width:30px; height:22px; flex:0 0 30px; display:inline-flex; align-items:center; justify-content:center; border-radius:5px; overflow:hidden; background:#eef2f7; box-shadow:0 2px 6px rgba(0,0,0,.12)}
+    .flag img{width:100%; height:100%; object-fit:cover; display:block}
+    .flag.icon{font-size:19px; line-height:1}
+    .name{font-weight:1000; font-size:18px; line-height:1.05}
+    .code{font-size:13px; color:#34415e; font-weight:1000; margin-right:2px}
+    .badge{font-size:13px; font-weight:1000; min-width:32px; text-align:center; color:#fff; background:var(--blue2); border-radius:999px; padding:7px 9px}
+    .badge.gold{color:#4b3400; background:#ffe66b; border:1px solid #efbd00}
+
+    .stickers{display:flex; gap:10px; flex-wrap:wrap}
+    .sticker{
+      appearance:none;
+      border:1px solid #d8deea;
+      background:#f2f5fa;
+      color:#081228;
+      border-radius:12px;
+      width:45px;
+      height:40px;
+      font-size:17px;
+      font-weight:1000;
+      cursor:pointer;
+      box-shadow:inset 0 -2px 0 rgba(0,0,0,.05);
+      transition:transform .12s ease, background .12s ease, color .12s ease, opacity .12s ease;
+    }
+    .sticker:hover{transform:translateY(-2px)}
+    .sticker.done{background:#dff9e9; color:#0b7a3e; border-color:#59c987; text-decoration:line-through; opacity:.72}
+    .sticker.dibu{background:#ffe66b; border-color:#efbd00; color:#5d3f00; width:auto; padding:0 14px}
+    .player-note{margin-top:12px; font-size:13px; color:#5b6477; font-weight:800}
+
+    .empty{display:none; text-align:center; padding:34px 20px; color:#fff; font-size:18px; font-weight:800}
+    .footer{margin-top:28px; color:rgba(255,255,255,.68); font-size:13px; text-align:center}
+
+    @media (max-width:1050px){.grid{grid-template-columns:repeat(3,1fr)} .hero{padding:32px}}
+    @media (max-width:780px){
+      .wrap{width:min(100% - 22px, 1180px); padding-top:14px}
+      .hero{border-radius:26px; padding:27px 24px}
+      .toolbar{grid-template-columns:1fr}
+      .grid{grid-template-columns:1fr 1fr; gap:12px}
+      .team{padding:20px 17px}
+      h1{font-size:54px}
+    }
+    @media (max-width:520px){
+      .grid{grid-template-columns:1fr}
+      .stats{display:grid; grid-template-columns:1fr 1fr}
+      .stat{min-width:0}
+      .progress-area{grid-template-columns:1fr}
+      .trophy{text-align:left}
+      h1{font-size:44px}
+      .lead{font-size:16px}
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="kicker">Akada collection tracker</div>
-      <h1>Panini<br>Manquants</h1>
-      <p class="subtitle">Liste privée des vignettes à trouver - ambiance Mundial, efficacité jurassienne, et DIBU en mode légende.</p>
+  <main class="wrap">
+    <section class="hero">
+      <p class="kicker">Akada collection tracker</p>
+      <h1>Panini<br/>manquants</h1>
+      <p class="lead">Liste privée des vignettes à trouver - ambiance Mundial, efficacité jurassienne, et DIBU en mode légende.</p>
+
       <div class="stats">
-        <div class="stat"><b id="total">0</b><span>vignettes</span></div>
-        <div class="stat"><b id="countries">0</b><span>pays / séries</span></div>
-        <div class="stat"><b id="remaining">0</b><span>encore à trouver</span></div>
+        <div class="stat"><strong id="total">60</strong><span>Vignettes</span></div>
+        <div class="stat"><strong id="countries">33</strong><span>Pays / séries</span></div>
+        <div class="stat"><strong id="remaining">60</strong><span>Encore à trouver</span></div>
       </div>
-    </header>
+
+      <div class="progress-area">
+        <div>
+          <div class="progress-label">Progression - <span id="foundText">0 trouvées</span></div>
+          <div class="bar"><span id="bar"></span></div>
+        </div>
+        <div>
+          <div class="trophy">🏆</div>
+          <div class="pct" id="pct">0 %</div>
+        </div>
+      </div>
+    </section>
 
     <div class="toolbar">
-      <input id="search" class="search" placeholder="Rechercher un pays, DIBU, FWC..." />
-      <button class="pill" onclick="resetDone()">Tout remettre</button>
+      <input class="search" id="search" placeholder="🔍 Rechercher un pays, DIBU, FWC..." />
+      <button class="btn" id="reset">↺ Tout remettre</button>
     </div>
 
-    <main id="grid" class="grid"></main>
-    <div class="footer">Clique sur une vignette quand tu l'as trouvée. La page garde tes coches sur ce navigateur.</div>
-  </div>
+    <section class="grid" id="grid"></section>
+    <div class="empty" id="empty">Aucun résultat. Même DIBU ne trouve pas 😄</div>
+    <div class="footer">Clique sur une vignette quand elle est trouvée. La progression est sauvegardée automatiquement sur cet appareil.</div>
+  </main>
 
-<script>
-const data = [
-  ['Afrique du Sud', ['4','10']],
-  ['Tchéquie', ['1']],
-  ['Canada', ['1','6']],
-  ['Bosnie-Herzégovine', ['13','18']],
-  ['Qatar', ['12']],
-  ['Suisse', ['3','10']],
-  ['Brésil', ['7','11']],
-  ['Écosse', ['20']],
-  ['USA', ['8']],
-  ['Paraguay', ['7','9']],
-  ['Turquie', ['17']],
-  ["Côte d'Ivoire", ['8']],
-  ['Équateur', ['6','8']],
-  ['Japon', ['12']],
-  ['Égypte', ['6','20']],
-  ['Iran', ['8']],
-  ['Nouvelle-Zélande', ['14']],
-  ['Cap-Vert', ['8','15','18']],
-  ['Arabie saoudite', ['1','2','12']],
-  ['Uruguay', ['6']],
-  ['Irak', ['8','13','17']],
-  ['Norvège', ['4']],
-  ['Argentine', ['2 DIBU !!!']],
-  ['Algérie', ['9','18']],
-  ['Autriche', ['12']],
-  ['Jordanie', ['1','12','15','19']],
-  ['Portugal', ['4','7','13','19']],
-  ['Congo', ['10','14']],
-  ['Ouzbékistan', ['1','8','16']],
-  ['Croatie', ['3','18']],
-  ['Ghana', ['2','13','18']],
-  ['Panama', ['10']],
-  ['FWC', ['11']]
-];
-const KEY='akada-panini-done-v1';
-let done = JSON.parse(localStorage.getItem(KEY) || '{}');
-const total = data.reduce((s, [, nums]) => s + nums.length, 0);
-function id(country, n){ return `${country}__${n}`; }
-function save(){ localStorage.setItem(KEY, JSON.stringify(done)); }
-function render(){
-  const q = document.getElementById('search').value.trim().toLowerCase();
-  const grid = document.getElementById('grid');
-  grid.innerHTML='';
-  let visible = 0;
-  data.forEach(([country, nums])=>{
-    const hay = (country+' '+nums.join(' ')).toLowerCase();
-    if(q && !hay.includes(q)) return;
-    visible++;
-    const card = document.createElement('section');
-    card.className='card';
-    const head = document.createElement('div');
-    head.className='country';
-    head.innerHTML = `<h2>${country}</h2><span class="count">${nums.length}</span>`;
-    const stickers = document.createElement('div');
-    stickers.className='stickers';
-    nums.forEach(n=>{
-      const span = document.createElement('span');
-      const isDibu = String(n).toLowerCase().includes('dibu');
-      span.className = 'num' + (isDibu ? ' dibu' : '') + (done[id(country,n)] ? ' done' : '');
-      span.textContent = String(n).replace(' DIBU !!!','');
-      span.title = isDibu ? 'DIBU !!!' : `${country} ${n}`;
-      span.onclick=()=>{ done[id(country,n)] = !done[id(country,n)]; save(); render(); };
-      stickers.appendChild(span);
+  <script>
+    const teams = [
+      {name:'Argentine', code:'AR', flag:'🇦🇷', nums:[2], special:true, note:'DIBU !!!'},
+      {name:'Afrique du Sud', code:'ZA', flag:'🇿🇦', nums:[4,10]},
+      {name:'Tchéquie', code:'CZ', flag:'🇨🇿', nums:[1]},
+      {name:'Canada', code:'CA', flag:'🇨🇦', nums:[1,6]},
+      {name:'Bosnie-Herzégovine', code:'BA', flag:'🇧🇦', nums:[13,18]},
+      {name:'Qatar', code:'QA', flag:'🇶🇦', nums:[12]},
+      {name:'Suisse', code:'CH', flag:'🇨🇭', nums:[3,10]},
+      {name:'Brésil', code:'BR', flag:'🇧🇷', nums:[7,11]},
+      {name:'Écosse', code:'SCO', flag:'🏴', nums:[20]},
+      {name:'USA', code:'US', flag:'🇺🇸', nums:[8]},
+      {name:'Paraguay', code:'PY', flag:'🇵🇾', nums:[7,9]},
+      {name:'Turquie', code:'TR', flag:'🇹🇷', nums:[17]},
+      {name:"Côte d'Ivoire", code:'CI', flag:'🇨🇮', nums:[8]},
+      {name:'Équateur', code:'EC', flag:'🇪🇨', nums:[6,8]},
+      {name:'Japon', code:'JP', flag:'🇯🇵', nums:[12]},
+      {name:'Égypte', code:'EG', flag:'🇪🇬', nums:[6,20]},
+      {name:'Iran', code:'IR', flag:'🇮🇷', nums:[8]},
+      {name:'Nouvelle-Zélande', code:'NZ', flag:'🇳🇿', nums:[14]},
+      {name:'Cap-Vert', code:'CV', flag:'🇨🇻', nums:[8,15,18]},
+      {name:'Arabie saoudite', code:'SA', flag:'🇸🇦', nums:[1,2,12]},
+      {name:'Uruguay', code:'UY', flag:'🇺🇾', nums:[6]},
+      {name:'Irak', code:'IQ', flag:'🇮🇶', nums:[8,13,17]},
+      {name:'Norvège', code:'NO', flag:'🇳🇴', nums:[4]},
+      {name:'Algérie', code:'DZ', flag:'🇩🇿', nums:[9,18]},
+      {name:'Autriche', code:'AT', flag:'🇦🇹', nums:[12]},
+      {name:'Jordanie', code:'JO', flag:'🇯🇴', nums:[1,12,15,19]},
+      {name:'Portugal', code:'PT', flag:'🇵🇹', nums:[4,7,13,19]},
+      {name:'Congo', code:'CD', flag:'🇨🇩', nums:[10,14]},
+      {name:'Ouzbékistan', code:'UZ', flag:'🇺🇿', nums:[1,8,16]},
+      {name:'Croatie', code:'HR', flag:'🇭🇷', nums:[3,18]},
+      {name:'Ghana', code:'GH', flag:'🇬🇭', nums:[2,13,18]},
+      {name:'Panama', code:'PA', flag:'🇵🇦', nums:[10]},
+      {name:'FWC', code:'FWC', flag:'🏆', nums:[11]}
+    ];
+
+    const storageKey = 'akada-panini-found-v3';
+    const grid = document.getElementById('grid');
+    const search = document.getElementById('search');
+    const reset = document.getElementById('reset');
+    const totalEl = document.getElementById('total');
+    const countriesEl = document.getElementById('countries');
+    const remainingEl = document.getElementById('remaining');
+    const foundText = document.getElementById('foundText');
+    const bar = document.getElementById('bar');
+    const pct = document.getElementById('pct');
+    const empty = document.getElementById('empty');
+
+    const total = teams.reduce((sum,t)=>sum+t.nums.length,0);
+    let found = new Set(JSON.parse(localStorage.getItem(storageKey) || '[]'));
+
+    function key(team,num){ return `${team.code}-${num}`; }
+    function save(){ localStorage.setItem(storageKey, JSON.stringify([...found])); }
+
+    const flagMap = {
+      AR:'ar', ZA:'za', CZ:'cz', CA:'ca', BA:'ba', QA:'qa', CH:'ch', BR:'br',
+      US:'us', PY:'py', TR:'tr', CI:'ci', EC:'ec', JP:'jp', EG:'eg', IR:'ir',
+      NZ:'nz', CV:'cv', SA:'sa', UY:'uy', IQ:'iq', NO:'no', DZ:'dz', AT:'at',
+      JO:'jo', PT:'pt', CD:'cd', UZ:'uz', HR:'hr', GH:'gh', PA:'pa'
+    };
+
+    function flagMarkup(team){
+      if(team.code === 'FWC') return `<span class="flag icon" aria-hidden="true">🏆</span>`;
+      if(team.code === 'SCO') return `<span class="flag"><img alt="Drapeau Écosse" src="https://flagcdn.com/gb-sct.svg"></span>`;
+      const iso = flagMap[team.code];
+      if(!iso) return `<span class="flag icon" aria-hidden="true">⚽</span>`;
+      return `<span class="flag"><img alt="Drapeau ${team.name}" src="https://flagcdn.com/w80/${iso}.png" srcset="https://flagcdn.com/w40/${iso}.png 40w, https://flagcdn.com/w80/${iso}.png 80w"></span>`;
+    }
+
+    function render(){
+      const q = search.value.trim().toLowerCase();
+      grid.innerHTML = '';
+      let shown = 0;
+
+      teams.forEach(team => {
+        const haystack = `${team.name} ${team.code} ${team.nums.join(' ')} ${team.note || ''}`.toLowerCase();
+        if(q && !haystack.includes(q)) return;
+        shown++;
+        const done = team.nums.filter(n => found.has(key(team,n))).length;
+        const card = document.createElement('article');
+        card.className = `team ${team.special ? 'special' : ''}`;
+        card.innerHTML = `
+          <div class="team-head">
+            <div class="country">
+              ${flagMarkup(team)}
+              <div><span class="code">${team.code}</span><span class="name">${team.name}</span></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+              ${team.special ? '<span class="badge gold">⭐ DIBU</span>' : ''}
+              <span class="badge">${done}/${team.nums.length}</span>
+            </div>
+          </div>
+          <div class="stickers">
+            ${team.nums.map(n => `<button class="sticker ${team.special ? 'dibu' : ''} ${found.has(key(team,n)) ? 'done' : ''}" data-code="${team.code}" data-num="${n}">${n}${team.special ? ' ⭐' : ''}</button>`).join('')}
+          </div>
+          ${team.note ? `<div class="player-note">${team.note}</div>` : ''}
+        `;
+        grid.appendChild(card);
+      });
+      empty.style.display = shown ? 'none' : 'block';
+      updateStats();
+    }
+
+    function updateStats(){
+      const foundCount = found.size;
+      const remaining = total - foundCount;
+      const percent = Math.round((foundCount / total) * 100);
+      totalEl.textContent = total;
+      countriesEl.textContent = teams.length;
+      remainingEl.textContent = remaining;
+      foundText.textContent = `${foundCount} trouvée${foundCount > 1 ? 's' : ''}`;
+      bar.style.width = `${percent}%`;
+      pct.textContent = `${percent} %`;
+    }
+
+    grid.addEventListener('click', (e)=>{
+      const btn = e.target.closest('.sticker');
+      if(!btn) return;
+      const k = `${btn.dataset.code}-${btn.dataset.num}`;
+      if(found.has(k)) found.delete(k); else found.add(k);
+      save();
+      render();
     });
-    card.appendChild(head); card.appendChild(stickers); grid.appendChild(card);
-  });
-  const found = Object.values(done).filter(Boolean).length;
-  document.getElementById('total').textContent = total;
-  document.getElementById('countries').textContent = data.length;
-  document.getElementById('remaining').textContent = total - found;
-}
-function resetDone(){ done={}; save(); render(); }
-document.getElementById('search').addEventListener('input', render);
-render();
-</script>
+
+    search.addEventListener('input', render);
+    reset.addEventListener('click', ()=>{
+      if(confirm('Remettre toutes les vignettes comme manquantes ?')){
+        found = new Set();
+        save();
+        render();
+      }
+    });
+
+    render();
+  </script>
 </body>
 </html>
