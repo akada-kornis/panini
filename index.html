@@ -50,6 +50,18 @@
 @media(max-width:940px){.hero-topbar{align-items:flex-start;flex-direction:column}.hero-owner-zone{justify-content:flex-start}.hero-owner-zone .owner-tab{font-size:12px;padding:9px 12px}}
 @media(max-width:560px){.hero-owner-zone{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}.hero-owner-zone .owner-tab{white-space:nowrap}.toolbar{display:block}}
 
+
+/* --- Futur module d'échange: J'échange ! --- */
+.hero-account-stack{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.trade-cta{position:relative;display:inline-flex;align-items:center;gap:10px;border-radius:999px;padding:14px 22px;background:linear-gradient(135deg,#fff,#ffd23f 42%,#00a86b);color:#10194e;font-weight:1000;letter-spacing:.02em;box-shadow:0 18px 44px rgba(255,210,63,.30),0 10px 24px rgba(0,0,0,.20);border:1px solid rgba(255,255,255,.55);overflow:hidden;transform:translateZ(0)}
+.trade-cta:before{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 0 32%,rgba(255,255,255,.72) 45%,transparent 58%);transform:translateX(-120%);transition:.55s}
+.trade-cta:hover{transform:translateY(-2px);box-shadow:0 24px 60px rgba(255,210,63,.42),0 16px 34px rgba(0,0,0,.24)}
+.trade-cta:hover:before{transform:translateX(120%)}
+.trade-panel{margin:18px 0 26px;border-radius:30px;padding:18px;background:linear-gradient(135deg,rgba(255,210,63,.18),rgba(255,255,255,.10));border:1px solid rgba(255,255,255,.24);box-shadow:0 24px 70px rgba(0,0,0,.22);backdrop-filter:blur(12px)}
+.trade-panel.hidden{display:none}.trade-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap}.trade-head h2{margin:0;font-size:28px;letter-spacing:-.03em}.trade-head p{margin:5px 0 0;opacity:.84}.trade-close{background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.22);border-radius:14px;padding:10px 13px}.trade-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}.trade-box{background:#fff;color:#111827;border-radius:22px;padding:16px;box-shadow:0 16px 34px rgba(0,0,0,.14)}.trade-box h3{margin:0 0 10px;font-size:18px}.trade-line{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid #e5e7eb}.trade-line:first-of-type{border-top:0}.trade-pill{display:inline-flex;align-items:center;justify-content:center;min-width:58px;border-radius:999px;padding:7px 9px;background:#eef2ff;color:#10194e;font-weight:1000}.trade-owner{font-weight:1000}.trade-muted{color:#64748b;font-size:13px}.trade-empty{padding:16px;border-radius:18px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.18);opacity:.9}.trade-count{background:linear-gradient(135deg,#dcfce7,#bbf7d0);color:#166534;border-radius:999px;padding:6px 9px;font-weight:1000;font-size:12px}
+@media(max-width:940px){.hero-account-stack{align-items:flex-start}.trade-grid{grid-template-columns:1fr}}
+@media(max-width:560px){.trade-cta{width:100%;justify-content:center}.trade-panel{padding:14px;border-radius:22px}.trade-head h2{font-size:24px}.trade-line{grid-template-columns:1fr}.trade-pill{justify-self:start}}
+
 </style>
 </head>
 <body>
@@ -57,17 +69,30 @@
   <header class="hero">
     <div class="hero-topbar">
       <div class="kicker">Akada Collection Tracker · Album privé · Scanini powered</div>
-      <section class="owner-zone hero-owner-zone" id="ownerZone">
-        <button class="owner-tab active" data-owner="Maé, Robin et Lenny">Maé, Robin et Lenny</button>
-        <button class="owner-tab owner-add" id="addOwner">+ Créer un album</button>
-      </section>
+      <div class="hero-account-stack">
+        <section class="owner-zone hero-owner-zone" id="ownerZone">
+          <button class="owner-tab active" data-owner="Maé, Robin et Lenny">Maé, Robin et Lenny</button>
+          <button class="owner-tab owner-add" id="addOwner">+ Créer un album</button>
+        </section>
+        <button class="trade-cta" id="tradeBtn">🤝 J'échange !</button>
+      </div>
     </div>
-    <h1 class="title">2350 Panini !</h1>
+    <h1 class="title">2350 Panini</h1>
     <p class="subtitle">Maé, Robin et Lenny</p>
     <div class="stats"><div class="stat"><b id="total">60</b><span>vignettes</span></div><div class="stat"><b id="countries">33</b><span>pays / séries</span></div><div class="stat"><b id="left">60</b><span>encore à trouver</span></div><div class="stat"><b id="pct">94%</b><span>album estimé</span></div></div>
     <div class="progress"><div><b>Progression de chasse</b><div class="bar"><div class="fill" id="fill"></div></div></div><div class="trophy">🏆</div></div>
   </header>
 
+  <section class="trade-panel hidden" id="tradePanel">
+    <div class="trade-head">
+      <div>
+        <h2>🤝 J'échange !</h2>
+        <p>Les pistes d'échange entre albums: qui a un double qui manque à qui ? Lecture fun, zéro action automatique.</p>
+      </div>
+      <button class="trade-close" id="tradeClose">Fermer</button>
+    </div>
+    <div id="tradeContent" class="trade-empty">Clique sur J'échange ! pour chercher les opportunités.</div>
+  </section>
 
   <section class="spotlight" id="spotlight"></section>
 
@@ -358,6 +383,67 @@ function startSpotCarousel(){
   carouselTimer=setInterval(()=>{i=(i+1)%HIGHLIGHT_IMAGES.length;img.src=HIGHLIGHT_IMAGES[i]},2600);
 }
 
+function ownerNameById(id){
+  return owners.find(o=>Number(o.owner_id)===Number(id))?.nom || `Album ${id}`;
+}
+function cardLabel(row){
+  return `${countryCode(row.country_id)} ${row.sticker_number}`;
+}
+function cardLongLabel(row){
+  return `${countryCode(row.country_id)} ${row.sticker_number}${row.sticker_name ? ' - '+row.sticker_name : ''}`;
+}
+function sameCard(a,b){
+  return Number(a.country_id)===Number(b.country_id) && Number(a.sticker_number)===Number(b.sticker_number);
+}
+async function openTradePanel(){
+  const panel=document.getElementById('tradePanel');
+  const content=document.getElementById('tradeContent');
+  if(!panel||!content)return;
+  panel.classList.remove('hidden');
+  content.className='trade-empty';
+  content.innerHTML='Recherche des échanges possibles...';
+  try{
+    if(!owners.length || !countries.length){await loadRefs();}
+    const r=await api(`${SUPABASE_TABLE}?select=*&order=owner_id.asc&order=country_id.asc&order=sticker_number.asc`);
+    if(!r.ok)throw new Error(await r.text());
+    const rows=await r.json();
+    const myMissing=rows.filter(r=>Number(r.owner_id)===Number(currentOwnerId) && normQty(r.quantity_missing)>0);
+    const myDoubles=rows.filter(r=>Number(r.owner_id)===Number(currentOwnerId) && normQty(r.quantity_double)>0);
+    const othersDoubles=rows.filter(r=>Number(r.owner_id)!==Number(currentOwnerId) && normQty(r.quantity_double)>0);
+    const othersMissing=rows.filter(r=>Number(r.owner_id)!==Number(currentOwnerId) && normQty(r.quantity_missing)>0);
+
+    const ask=[];
+    myMissing.forEach(m=>{
+      othersDoubles.filter(d=>sameCard(m,d)).forEach(d=>ask.push({mine:m, other:d}));
+    });
+    const give=[];
+    myDoubles.forEach(d=>{
+      othersMissing.filter(m=>sameCard(d,m)).forEach(m=>give.push({mine:d, other:m}));
+    });
+
+    if(!ask.length && !give.length){
+      content.className='trade-empty';
+      content.innerHTML=`Aucune piste d'échange trouvée pour <b>${esc(currentOwnerName)}</b> pour l'instant. Ajoute les manques et doubles de plusieurs albums et la magie apparaîtra.`;
+      return;
+    }
+
+    content.className='trade-grid';
+    content.innerHTML=`
+      <div class="trade-box">
+        <h3>🙏 Je peux quémander</h3>
+        ${ask.length ? ask.map(x=>`<div class="trade-line"><span class="trade-pill">${esc(cardLabel(x.mine))}</span><div><div class="trade-owner">à ${esc(ownerNameById(x.other.owner_id))}</div><div class="trade-muted">${esc(cardLongLabel(x.mine))}</div></div><span class="trade-count">×${normQty(x.other.quantity_double)}</span></div>`).join('') : '<div class="trade-muted">Personne n'a encore tes manques en double.</div>'}
+      </div>
+      <div class="trade-box">
+        <h3>🎁 Je peux proposer</h3>
+        ${give.length ? give.map(x=>`<div class="trade-line"><span class="trade-pill">${esc(cardLabel(x.mine))}</span><div><div class="trade-owner">à ${esc(ownerNameById(x.other.owner_id))}</div><div class="trade-muted">${esc(cardLongLabel(x.mine))}</div></div><span class="trade-count">×${normQty(x.mine.quantity_double)}</span></div>`).join('') : '<div class="trade-muted">Tes doubles ne correspondent encore à aucun manque déclaré.</div>'}
+      </div>`;
+    panel.scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){
+    content.className='cloud-error';
+    content.innerHTML='Erreur échange: '+esc(String(e.message||e).slice(0,300));
+  }
+}
+
 function openCloudForm(mode){cloudMode=mode;document.getElementById('cloudFormTitle').textContent=mode==='missing'?'Nouveau manque':'Nouveau double';document.getElementById('cloudForm').classList.add('open');document.getElementById('cloudCountry').focus()}
 function closeCloudForm(){document.getElementById('cloudForm').classList.remove('open')}
 async function saveCloudItem(){
@@ -384,6 +470,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
   try{await loadRefs();await loadCloud()}catch(e){const el=document.getElementById('cloudContent');if(el)el.innerHTML=`<div class="cloud-error">Erreur initialisation Supabase: ${esc(String(e.message||e).slice(0,300))}</div>`;renderShowcaseFallback()}
   document.getElementById('newMissing')?.addEventListener('click',()=>openCloudForm('missing'));
   document.getElementById('newDouble')?.addEventListener('click',()=>openCloudForm('double'));
+  document.getElementById('tradeBtn')?.addEventListener('click',openTradePanel);
+  document.getElementById('tradeClose')?.addEventListener('click',()=>document.getElementById('tradePanel')?.classList.add('hidden'));
   document.getElementById('cancelCloudItem')?.addEventListener('click',closeCloudForm);
   document.getElementById('saveCloudItem')?.addEventListener('click',saveCloudItem);
   document.querySelectorAll('.cloud-tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.cloud-tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');cloudTab=b.dataset.cloudtab;renderCloud()}));
