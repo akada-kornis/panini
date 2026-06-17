@@ -62,7 +62,7 @@
         <button class="owner-tab owner-add" id="addOwner">+ Créer un album</button>
       </section>
     </div>
-    <h1 class="title">Panini<br>Manquants</h1>
+    <h1 class="title">2350 Panini !</h1>
     <p class="subtitle">Maé, Robin et Lenny</p>
     <div class="stats"><div class="stat"><b id="total">60</b><span>vignettes</span></div><div class="stat"><b id="countries">33</b><span>pays / séries</span></div><div class="stat"><b id="left">60</b><span>encore à trouver</span></div><div class="stat"><b id="pct">94%</b><span>album estimé</span></div></div>
     <div class="progress"><div><b>Progression de chasse</b><div class="bar"><div class="fill" id="fill"></div></div></div><div class="trophy">🏆</div></div>
@@ -183,22 +183,47 @@ function countryName(id){const c=countryById(id);return c ? `${c.initiale_panini
 function saveOwnerChoice(){localStorage.setItem('akada-panini-owner-id',String(currentOwnerId||''));localStorage.setItem('akada-panini-owner-name',currentOwnerName||'')}
 
 async function loadRefs(){
-  const [or,cr] = await Promise.all([
-    api(`${OWNER_TABLE}?select=owner_id,nom&order=nom.asc`),
-    api(`${COUNTRY_TABLE}?select=country_id,nom,initiale_panini&order=initiale_panini.asc`)
-  ]);
-  if(!or.ok)throw new Error('Owner: '+await or.text());
-  if(!cr.ok)throw new Error('Pays: '+await cr.text());
-  owners = await or.json();
-  countries = await cr.json();
+  let ownerError = null;
+  let countryError = null;
 
-  // Si la table Owner existe mais est vide, on crée l'album de base automatiquement.
-  // Si RLS bloque l'accès, Supabase peut aussi renvoyer un tableau vide: dans ce cas il faudra désactiver RLS ou ajouter une policy.
+  // Owner et Pays sont des tables de référence. Si Supabase les renvoie vides au tout premier chargement
+  // (cache/RLS/premier déploiement), on ne bloque pas l'interface: on utilise un fallback propre.
+  try{
+    const or = await api(`${OWNER_TABLE}?select=owner_id,nom&order=nom.asc`);
+    if(!or.ok)throw new Error(await or.text());
+    owners = await or.json();
+  }catch(e){
+    ownerError = e;
+    owners = [];
+  }
+
+  try{
+    const cr = await api(`${COUNTRY_TABLE}?select=country_id,nom,initiale_panini&order=initiale_panini.asc`);
+    if(!cr.ok)throw new Error(await cr.text());
+    countries = await cr.json();
+  }catch(e){
+    countryError = e;
+    countries = [];
+  }
+
+  // Si Owner est vide, on tente de créer l'album de base. Si ça échoue, on garde quand même un fallback local.
   if(!owners.length){
-    const createOwner = await api(OWNER_TABLE,{method:'POST',body:JSON.stringify({nom:DEFAULT_OWNER_NAME})});
-    if(createOwner.ok){
-      owners = await createOwner.json();
-    }
+    try{
+      const createOwner = await api(OWNER_TABLE,{method:'POST',body:JSON.stringify({nom:DEFAULT_OWNER_NAME})});
+      if(createOwner.ok){
+        owners = await createOwner.json();
+      }
+    }catch(e){}
+  }
+
+  // Fallback anti-écran rouge: dans notre jeu de données initial, Maé/Robin/Lenny est owner_id = 1.
+  if(!owners.length){
+    owners = [{owner_id:1, nom:DEFAULT_OWNER_NAME}];
+  }
+
+  // Fallback Pays à partir de l'ancien index si la table Pays n'est pas encore lisible.
+  if(!countries.length){
+    countries = teams.map((t,i)=>({country_id:i+1, nom:t.n, initiale_panini:t.code}));
   }
 
   let selected = owners.find(o=>Number(o.owner_id)===currentOwnerId) || owners.find(o=>o.nom===currentOwnerName) || owners.find(o=>o.nom===DEFAULT_OWNER_NAME) || owners[0];
