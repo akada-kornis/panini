@@ -40,12 +40,28 @@
 .spot-carousel{display:none}
 @media(max-width:560px){.legend-photo{height:210px}.card-flag{width:38px;height:26px}.legend-name{font-size:24px}}
 
+/* --- Album switcher intégré dans l'entête --- */
+.hero-topbar{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px}
+.hero-owner-zone{margin:0;display:flex;justify-content:flex-end;gap:8px;align-items:center;flex-wrap:wrap}
+.hero-owner-zone .owner-tab{padding:10px 14px;border-radius:999px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.30);color:#fff;font-size:13px;font-weight:1000;box-shadow:0 12px 28px rgba(0,0,0,.16);backdrop-filter:blur(12px)}
+.hero-owner-zone .owner-tab.active{background:linear-gradient(135deg,#fff,#ffe999);color:#10194e;box-shadow:0 16px 34px rgba(255,210,63,.24)}
+.hero-owner-zone .owner-add{background:rgba(255,210,63,.92);color:#10194e;border-color:rgba(255,255,255,.38)}
+.toolbar{grid-template-columns:1fr}.toolbar .search{width:100%}
+@media(max-width:940px){.hero-topbar{align-items:flex-start;flex-direction:column}.hero-owner-zone{justify-content:flex-start}.hero-owner-zone .owner-tab{font-size:12px;padding:9px 12px}}
+@media(max-width:560px){.hero-owner-zone{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}.hero-owner-zone .owner-tab{white-space:nowrap}.toolbar{display:block}}
+
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="hero">
-    <div class="kicker">Akada Collection Tracker · Album privé · Scanini powered</div>
+    <div class="hero-topbar">
+      <div class="kicker">Akada Collection Tracker · Album privé · Scanini powered</div>
+      <section class="owner-zone hero-owner-zone" id="ownerZone">
+        <button class="owner-tab active" data-owner="Maé, Robin et Lenny">Maé, Robin et Lenny</button>
+        <button class="owner-tab owner-add" id="addOwner">+ Créer un album</button>
+      </section>
+    </div>
     <h1 class="title">Panini<br>Manquants</h1>
     <p class="subtitle">Maé, Robin et Lenny</p>
     <div class="stats"><div class="stat"><b id="total">60</b><span>vignettes</span></div><div class="stat"><b id="countries">33</b><span>pays / séries</span></div><div class="stat"><b id="left">60</b><span>encore à trouver</span></div><div class="stat"><b id="pct">94%</b><span>album estimé</span></div></div>
@@ -53,15 +69,9 @@
   </header>
 
 
-  <section class="owner-zone" id="ownerZone">
-    <span class="owner-label">Album</span>
-    <button class="owner-tab active" data-owner="Maé, Robin et Lenny">Maé, Robin et Lenny</button>
-    <button class="owner-tab owner-add" id="addOwner">+ Nouveau compte</button>
-  </section>
-
   <section class="spotlight" id="spotlight"></section>
 
-  <div class="toolbar"><input id="q" class="search" placeholder="Rechercher: DIBU, Xhaka, Portugal, 13, club..."/><button class="reset" id="reset">↺ Tout remettre</button></div>
+  <div class="toolbar"><input id="q" class="search" placeholder="Rechercher: DIBU, Xhaka, Portugal, 13, club..."/></div>
   <div class="filters"><button class="chip active" data-filter="all">Tout</button><button class="chip" data-filter="players">Joueurs</button><button class="chip" data-filter="specials">Logos / team photos</button><button class="chip" data-filter="stars">Stars</button><button class="chip" data-filter="todo">A trouver</button></div>
 
   <section class="cloud-panel" id="cloudPanel">
@@ -128,7 +138,7 @@ function renderSpotlight(){let st=allStickers().find(x=>x.tags.includes('dibu'))
 async function wikiImage(name){try{let url=`https://en.wikipedia.org/w/api.php?action=query&origin=*&generator=search&gsrsearch=${encodeURIComponent(name+' footballer')}&gsrlimit=1&prop=pageimages&pithumbsize=700&format=json`;let r=await fetch(url);let j=await r.json();let p=j.query&&j.query.pages&&Object.values(j.query.pages)[0];return p&&p.thumbnail&&p.thumbnail.source}catch(e){return null}}
 async function loadWiki(name,containerId,withLoader=true){let c=document.getElementById(containerId);if(!c)return;let img=await wikiImage(name);let loader=document.getElementById('loader');if(img){c.innerHTML=`<img src="${img}" alt="${name}">`+(withLoader?'':'')}else if(withLoader){c.innerHTML='<div class="shirt">⚽</div><div class="loader">image non trouvée - carte stylisée</div>'} if(loader)loader.style.display='none'}
 function openModal(st){current=st;let t=st.team;document.getElementById('modal').classList.add('open');document.getElementById('badge').innerHTML=`${t.flag?`<img class="flag" src="${flag(t)}">`:''}${t.code} · ${t.n}`;document.getElementById('mName').textContent=st.name;document.getElementById('mSub').textContent=st.tags.includes('dibu')?'DIBU en vedette - carte légendaire':'Vignette manquante à trouver';document.getElementById('mSticker').textContent=`${t.code} ${st.num}`;document.getElementById('mType').textContent=isSpecial(st)?'Spéciale / équipe':'Joueur';document.getElementById('mClub').textContent=st.club||'Club à compléter';document.getElementById('scanini').href=scanini(t);document.getElementById('toggleFound').textContent=found.has(sid(t,st.num))?'Remettre à trouver':'Marquer trouvée';document.getElementById('photo').innerHTML='<div class="shirt">⚽</div><div class="loader" id="loader">recherche image...</div>'; if(st.photo){document.getElementById('photo').innerHTML=`<img src="${st.photo}" alt="${st.name}">`} else if(!isSpecial(st)) loadWiki(st.name,'photo',true); else document.getElementById('photo').innerHTML='<div class="shirt">🏆</div><div class="loader">spéciale album</div>';}
-document.getElementById('close').onclick=()=>document.getElementById('modal').classList.remove('open');document.getElementById('modal').onclick=e=>{if(e.target.id==='modal')document.getElementById('modal').classList.remove('open')};document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('modal').classList.remove('open')});document.getElementById('toggleFound').onclick=()=>{if(!current)return;let id=sid(current.team,current.num);found.has(id)?found.delete(id):found.add(id);save();render();openModal(current)};document.getElementById('copy').onclick=()=>{if(current)navigator.clipboard.writeText(`${current.team.code} ${current.num} - ${current.name}`)};document.getElementById('reset').onclick=()=>{if(confirm('Remettre toutes les vignettes comme manquantes ?')){found.clear();save();render()}};document.getElementById('q').addEventListener('input',render);document.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));b.classList.add('active');filter=b.dataset.filter;render()});render();
+document.getElementById('close').onclick=()=>document.getElementById('modal').classList.remove('open');document.getElementById('modal').onclick=e=>{if(e.target.id==='modal')document.getElementById('modal').classList.remove('open')};document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('modal').classList.remove('open')});document.getElementById('toggleFound').onclick=()=>{if(!current)return;let id=sid(current.team,current.num);found.has(id)?found.delete(id):found.add(id);save();render();openModal(current)};document.getElementById('copy').onclick=()=>{if(current)navigator.clipboard.writeText(`${current.team.code} ${current.num} - ${current.name}`)};document.getElementById('q').addEventListener('input',render);document.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));b.classList.add('active');filter=b.dataset.filter;render()});render();
 </script>
 
 <script>
@@ -205,7 +215,7 @@ function renderCountrySelect(){
 
 function renderOwnerTabs(){
   const zone=document.getElementById('ownerZone');if(!zone)return;
-  zone.innerHTML='<span class="owner-label">Album</span>'+owners.map(o=>`<button class="owner-tab ${Number(o.owner_id)===Number(currentOwnerId)?'active':''}" data-owner-id="${Number(o.owner_id)}">${esc(o.nom)}</button>`).join('')+'<button class="owner-tab owner-add" id="addOwner">+ Nouveau compte</button>';
+  zone.innerHTML=owners.map(o=>`<button class="owner-tab ${Number(o.owner_id)===Number(currentOwnerId)?'active':''}" data-owner-id="${Number(o.owner_id)}">👤 ${esc(o.nom)}</button>`).join('')+'<button class="owner-tab owner-add" id="addOwner">+ Créer un album</button>';
   zone.querySelectorAll('[data-owner-id]').forEach(b=>b.onclick=()=>{const o=owners.find(x=>Number(x.owner_id)===Number(b.dataset.ownerId));if(!o)return;currentOwnerId=Number(o.owner_id);currentOwnerName=o.nom;saveOwnerChoice();renderOwnerTabs();loadCloud()});
   document.getElementById('addOwner').onclick=addOwner;
   const lab=document.getElementById('activeOwnerLabel');if(lab)lab.textContent=currentOwnerName;
