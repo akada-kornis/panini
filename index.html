@@ -222,6 +222,73 @@
   z-index:20;
 }
 
+
+
+/* --- v16h24 v3: carousel enfants en vraie carte portrait, visages en haut --- */
+.family-mirror-card{
+  width:210px!important;
+  height:350px!important;
+  justify-self:end;
+  transform:rotate(4deg);
+}
+.family-mirror-card:hover{
+  transform:rotate(3deg) translateY(-5px);
+}
+.family-mirror-card .legend-inner{
+  padding:14px!important;
+}
+.family-mirror-card .legend-photo{
+  height:270px!important;
+  margin-top:22px;
+  border-radius:18px;
+  background:#10194e;
+}
+.family-mirror-card .legend-photo img{
+  width:100%;
+  height:100%;
+  object-fit:cover!important;
+  object-position:top center!important;
+  transform:none!important;
+  filter:saturate(1.06) contrast(1.04);
+}
+.family-mirror-card .card-rank{
+  left:auto!important;
+  right:14px!important;
+  top:14px!important;
+  transform:none!important;
+}
+.family-mirror-card .card-flag{
+  left:14px!important;
+  top:14px!important;
+  right:auto!important;
+}
+.spot-carousel.family-carousel{
+  width:210px!important;
+  height:350px!important;
+  margin:20px auto 0!important;
+  border-radius:28px!important;
+  padding:14px!important;
+  background:linear-gradient(145deg,#fff7bf,#ffd23f 55%,#d7a300)!important;
+  transform:rotate(4deg)!important;
+  overflow:hidden!important;
+}
+.spot-carousel.family-carousel img{
+  border-radius:18px!important;
+  width:100%!important;
+  height:270px!important;
+  margin-top:22px;
+  object-fit:cover!important;
+  object-position:top center!important;
+}
+@media(max-width:940px){
+  .family-mirror-card{justify-self:center;width:205px!important;height:340px!important;}
+  .family-mirror-card .legend-photo{height:260px!important;}
+}
+@media(max-width:560px){
+  .family-mirror-card{width:200px!important;height:330px!important;}
+  .family-mirror-card .legend-photo{height:252px!important;margin-top:20px;}
+}
+
 </style>
 </head>
 <body>
