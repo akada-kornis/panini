@@ -90,6 +90,14 @@
 .cloud-list-details summary:after{content:'+';font-weight:1000}
 .cloud-list-details[open] summary:after{content:'−'}
 .cloud-list-body{padding:0 14px 14px}
+
+/* --- v7: carousel signature + distinction manques/doubles dans la vue album --- */
+.sticker.missing-card{background:linear-gradient(#fff,#eef2f7);}
+.sticker.double-card{background:linear-gradient(135deg,#dcfce7,#bbf7d0);box-shadow:inset 0 0 0 1px #86efac,0 8px 18px rgba(22,101,52,.16);}
+.sticker.double-card:after{content:'DOUBLE';position:absolute;right:6px;top:6px;background:#166534;color:#fff;border-radius:999px;padding:3px 5px;font-size:7px;font-weight:1000;letter-spacing:.04em;}
+.sticker.double-card .num{color:#166534}.sticker.missing-card .num{color:#111827}
+.sticker.double-card.dibu,.sticker.missing-card.dibu{box-shadow:0 0 0 2px var(--gold),0 14px 30px rgba(255,210,63,.36)}
+
 </style>
 </head>
 <body>
@@ -137,7 +145,7 @@
   <section class="cloud-panel" id="cloudPanel">
     <div class="cloud-head"><div><h2 class="cloud-title">Détail de l'album partagé</h2><p class="cloud-sub">Compte actif: <b id="activeOwnerLabel">Maé, Robin et Lenny</b>. Chaque compte possède ses propres manques et ses propres doubles.</p></div><div class="cloud-actions"><button class="cloud-btn" id="newMissing">+ Nouveau manque</button><button class="cloud-btn alt" id="newDouble">+ Nouveau double</button></div></div>
     <div class="cloud-stats"><div class="cloud-stat"><b id="cloudMissingTotal">0</b><span>manques saisis</span></div><div class="cloud-stat"><b id="cloudDoubleTotal">0</b><span>doubles saisis</span></div><div class="cloud-stat"><b id="cloudCountryTotal">0</b><span>pays concernés</span></div></div>
-    <div class="cloud-tabs"><button class="cloud-tab" data-cloudtab="graph">Par pays</button><button class="cloud-tab active" data-cloudtab="missing">Manques</button><button class="cloud-tab" data-cloudtab="double">Doubles</button></div>
+    <div class="cloud-tabs"><button class="cloud-tab active" data-cloudtab="graph">Par pays</button><button class="cloud-tab" data-cloudtab="missing">Manques</button><button class="cloud-tab" data-cloudtab="double">Doubles</button></div>
     <div class="cloud-form" id="cloudForm"><h3 id="cloudFormTitle">Nouveau manque</h3><div class="cloud-grid-form"><select id="cloudCountry"><option value="">Pays / série...</option></select><input id="cloudNumber" type="number" min="1" placeholder="No: 4" /><input id="cloudName" placeholder="Nom: Leo Ostigård" /><input id="cloudQty" type="number" min="1" value="1" placeholder="Qté" /><input id="cloudNote" placeholder="Note facultative / texte highlight" /><label class="cloud-check"><input id="cloudSpecial" type="checkbox" /> Highlight</label></div><div class="cloud-form-actions"><button class="cloud-save" id="saveCloudItem">Enregistrer</button><button class="cloud-cancel" id="cancelCloudItem">Annuler</button></div></div>
     <div id="cloudContent"><div class="cloud-empty">Chargement Supabase...</div></div><div class="cloud-help">Exemple: Norvège 4 peut être un manque pendant que Norvège 5, 6, 7, 8 sont des doubles. Les deux listes sont séparées.</div>
   </section>
@@ -232,7 +240,7 @@ const HIGHLIGHT_IMAGES = [
   "assets/MaéRobin5.jpeg",
   "assets/MaéRobin6.jpeg"
 ];
-let cloudRows = [], cloudTab = "missing", cloudMode = "missing";
+let cloudRows = [], cloudTab = "graph", cloudMode = "graph";
 let owners = [], countries = [];
 let currentOwnerId = Number(localStorage.getItem('akada-panini-owner-id') || 0);
 let currentOwnerName = localStorage.getItem('akada-panini-owner-name') || DEFAULT_OWNER_NAME;
@@ -396,7 +404,7 @@ function renderCloudAlbum(rows,title){
     const fromTeams=teams.find(t=>t.code===code);
     const flagHtml=fromTeams&&fromTeams.flag?`<img class="flag" src="${flag(fromTeams)}" onerror="this.style.display='none'">`:'<span>🏆</span>';
     const count=rs.reduce((a,r)=>a+normQty(r._viewQty||0),0);
-    return `<article class="country"><div class="head">${flagHtml}<div class="name">${esc(c?.nom||code)}</div><div class="count">${count}</div></div><div class="stickers">${rs.map(r=>`<div class="sticker ${normQty(r.sticker_special)>0?'foil dibu':''}" title="${esc(r.sticker_name||'')}"><div class="num">${esc(r.sticker_number)}${normQty(r.sticker_special)>0?'⭐':''}</div><div class="mini">${esc(r.sticker_name||'')}</div></div>`).join('')}</div></article>`
+    return `<article class="country"><div class="head">${flagHtml}<div class="name">${esc(c?.nom||code)}</div><div class="count">${count}</div></div><div class="stickers">${rs.map(r=>{const typ=r._viewType==='double'?'double-card':'missing-card';const qty=normQty(r._viewQty||0);return `<div class="sticker ${typ} ${normQty(r.sticker_special)>0?'foil dibu':''}" title="${esc(r.sticker_name||'')}"><div class="num">${esc(r.sticker_number)}${normQty(r.sticker_special)>0?'⭐':''}</div><div class="mini">${esc(r.sticker_name||'')}${qty>1?' ×'+qty:''}</div></div>`}).join('')}</div></article>`
   }).join('')}</div>`;
 }
 
@@ -539,8 +547,14 @@ function renderShowcaseFallback(){
 }
 
 function startSpotCarousel(){
-  // Conservé pour compatibilité avec d'anciens appels, mais le highlight n'utilise plus d'images ni de textes codés en dur.
   clearInterval(carouselTimer);
+  const img=document.getElementById('spotCarouselImg');
+  if(!img || !HIGHLIGHT_IMAGES.length)return;
+  let i=0;
+  carouselTimer=setInterval(()=>{
+    i=(i+1)%HIGHLIGHT_IMAGES.length;
+    img.src=HIGHLIGHT_IMAGES[i];
+  },2600);
 }
 
 function ownerNameById(id){
