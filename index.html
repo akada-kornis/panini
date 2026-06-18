@@ -289,6 +289,44 @@
   .family-mirror-card .legend-photo{height:252px!important;margin-top:20px;}
 }
 
+
+/* --- v16h24 v4: ajustements carte favorite + formulaire plus propre --- */
+.special-family-card .legend-photo{
+  height:300px!important;
+}
+.special-family-card .legend-photo img{
+  object-fit:cover!important;
+  object-position:top center!important;
+  transform:scale(1.10)!important;
+  transform-origin:top center!important;
+}
+.special-family-card .legend-inner{
+  padding:12px!important;
+}
+.special-family-card .legend-meta{
+  margin-top:8px!important;
+}
+#cloudNumber{
+  width:100%;
+  border:0;
+  border-radius:14px;
+  padding:13px;
+  font:inherit;
+  background:#fff;
+  color:#111;
+}
+#cloudName[readonly]{
+  background:#eef2ff;
+  color:#1e2a78;
+  font-weight:800;
+}
+@media(max-width:940px){
+  .special-family-card .legend-photo{height:270px!important;}
+}
+@media(max-width:560px){
+  .special-family-card .legend-photo{height:255px!important;}
+}
+
 </style>
 </head>
 <body>
@@ -337,7 +375,7 @@
     <div class="cloud-head"><div><h2 class="cloud-title">Détail de l'album partagé</h2><p class="cloud-sub">Compte actif: <b id="activeOwnerLabel">Maé, Robin et Lenny</b>. Chaque compte possède ses propres manques et ses propres doubles.</p></div><div class="cloud-actions"><button class="cloud-btn" id="newMissing">+ Nouveau manque</button><button class="cloud-btn alt" id="newDouble">+ Nouveau double</button></div></div>
     <div class="cloud-stats"><div class="cloud-stat"><b id="cloudMissingTotal">0</b><span>manques saisis</span></div><div class="cloud-stat"><b id="cloudDoubleTotal">0</b><span>doubles saisis</span></div><div class="cloud-stat"><b id="cloudCountryTotal">0</b><span>pays concernés</span></div></div>
     <div class="cloud-tabs"><button class="cloud-tab active" data-cloudtab="graph">Par pays</button><button class="cloud-tab" data-cloudtab="missing">Manques</button><button class="cloud-tab" data-cloudtab="double">Doubles</button></div>
-    <div class="cloud-form" id="cloudForm"><h3 id="cloudFormTitle">Nouveau manque</h3><div class="cloud-grid-form"><select id="cloudCountry"><option value="">Pays / série...</option></select><input id="cloudNumber" type="number" min="1" placeholder="No: 4" /><input id="cloudName" placeholder="Nom auto depuis PaniniReference" /><input id="cloudQty" type="number" min="1" value="1" placeholder="Qté" /><input id="cloudNote" placeholder="Note facultative / texte highlight" /><label class="cloud-check"><input id="cloudSpecial" type="checkbox" /> Highlight</label></div><div class="cloud-form-actions"><button class="cloud-save" id="saveCloudItem">Enregistrer</button><button class="cloud-cancel" id="cancelCloudItem">Annuler</button></div></div>
+    <div class="cloud-form" id="cloudForm"><h3 id="cloudFormTitle">Nouveau manque</h3><div class="cloud-grid-form"><select id="cloudCountry"><option value="">Pays / série...</option></select><select id="cloudNumber"><option value="">No + nom...</option></select><input id="cloudName" readonly placeholder="Nom affiché depuis PaniniReference" /><input id="cloudQty" type="number" min="1" value="1" placeholder="Qté" /><input id="cloudNote" placeholder="Note facultative / texte highlight" /><label class="cloud-check"><input id="cloudSpecial" type="checkbox" /> Highlight</label></div><div class="cloud-form-actions"><button class="cloud-save" id="saveCloudItem">Enregistrer</button><button class="cloud-cancel" id="cancelCloudItem">Annuler</button></div></div>
     <div id="cloudContent"><div class="cloud-empty">Chargement Supabase...</div></div><div class="cloud-help">Exemple: Norvège 4 peut être un manque pendant que Norvège 5, 6, 7, 8 sont des doubles. Les deux listes sont séparées.</div>
   </section>
 
@@ -536,6 +574,42 @@ function renderCountrySelect(){
   const sel=document.getElementById('cloudCountry');
   if(!sel)return;
   sel.innerHTML='<option value="">Pays / série...</option>'+countries.map(c=>`<option value="${Number(c.country_id)}">${esc(c.initiale_panini)} - ${esc(c.nom)}</option>`).join('');
+}
+
+function refsForCountry(country_id){
+  return referenceRows
+    .filter(r=>Number(r.country_id)===Number(country_id))
+    .sort((a,b)=>Number(a.sticker_number)-Number(b.sticker_number));
+}
+
+function updateStickerNumberOptions(){
+  const countrySel=document.getElementById('cloudCountry');
+  const numberSel=document.getElementById('cloudNumber');
+  if(!countrySel || !numberSel)return;
+  const country_id=Number(countrySel.value);
+  const previous=String(numberSel.value||'');
+  if(!country_id){
+    numberSel.innerHTML="<option value=''>Choisis d'abord un pays...</option>";
+    syncCloudNameFromReference();
+    return;
+  }
+  const refs=refsForCountry(country_id);
+  if(refs.length){
+    numberSel.innerHTML='<option value="">No + nom...</option>'+refs.map(r=>`<option value="${Number(r.sticker_number)}">${esc(r.sticker_number)} - ${esc(r.sticker_name || r.sticker_code || '')}</option>`).join('');
+  }else{
+    numberSel.innerHTML='<option value="">No...</option>'+Array.from({length:20},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('');
+  }
+  if(previous && [...numberSel.options].some(o=>o.value===previous))numberSel.value=previous;
+  syncCloudNameFromReference();
+}
+
+function syncCloudNameFromReference(){
+  const country_id=Number(document.getElementById('cloudCountry')?.value||0);
+  const sticker_number=Number(document.getElementById('cloudNumber')?.value||0);
+  const nameInput=document.getElementById('cloudName');
+  if(!nameInput)return;
+  const ref=refByCountryNumber(country_id,sticker_number);
+  nameInput.value=ref ? (ref.sticker_name || '') : '';
 }
 
 function renderOwnerTabs(){
@@ -884,28 +958,51 @@ async function openTradePanel(){
   }
 }
 
-function openCloudForm(mode){cloudMode=mode;document.getElementById('cloudFormTitle').textContent=mode==='missing'?'Nouveau manque':'Nouveau double';document.getElementById('cloudForm').classList.add('open');document.getElementById('cloudCountry').focus()}
+async function openCloudForm(mode){cloudMode=mode;document.getElementById('cloudFormTitle').textContent=mode==='missing'?'Nouveau manque':'Nouveau double';document.getElementById('cloudForm').classList.add('open');try{await loadReferenceCache()}catch(e){} updateStickerNumberOptions();document.getElementById('cloudCountry').focus()}
 function closeCloudForm(){document.getElementById('cloudForm').classList.remove('open')}
 async function saveCloudItem(){
   const country_id=Number(document.getElementById('cloudCountry').value);
   const sticker_number=Number(document.getElementById('cloudNumber').value);
-  let sticker_name=document.getElementById('cloudName').value.trim();
   const qty=Math.max(1,Number(document.getElementById('cloudQty').value||1));
   const note=document.getElementById('cloudNote').value.trim();
   const sticker_special=document.getElementById('cloudSpecial').checked ? 1 : 0;
   if(!country_id||!sticker_number){alert('Il faut au minimum le pays et le numéro.');return}
   try{await loadReferenceCache()}catch(e){}
   const ref = refByCountryNumber(country_id,sticker_number);
-  if(ref && !sticker_name) sticker_name = ref.sticker_name;
-  const payload={owner_id:currentOwnerId,country_id,sticker_number,sticker_name,note,quantity_missing:cloudMode==='missing'?qty:0,quantity_double:cloudMode==='double'?qty:0,sticker_special};
+  const existing = cloudRows.find(r=>Number(r.owner_id)===Number(currentOwnerId) && Number(r.country_id)===country_id && Number(r.sticker_number)===sticker_number);
+
+  const payload={};
   if(ref) payload.reference_id = ref.id;
-  const btn=document.getElementById('saveCloudItem');btn.disabled=true;btn.textContent='Enregistrement...';
+  if(note) payload.note = note;
+  if(sticker_special) payload.sticker_special = 1;
+  if(cloudMode==='missing') payload.quantity_missing = qty;
+  if(cloudMode==='double') payload.quantity_double = qty;
+
+  const btn=document.getElementById('saveCloudItem');btn.disabled=true;btn.textContent=existing?'Mise à jour...':'Enregistrement...';
   try{
-    const r=await api(SUPABASE_TABLE,{method:'POST',body:JSON.stringify(payload)});
+    let r;
+    if(existing){
+      r=await api(`${SUPABASE_TABLE}?id=eq.${Number(existing.id)}`,{method:'PATCH',body:JSON.stringify(payload)});
+    }else{
+      const insertPayload={
+        owner_id:currentOwnerId,
+        country_id,
+        sticker_number,
+        note,
+        quantity_missing:cloudMode==='missing'?qty:0,
+        quantity_double:cloudMode==='double'?qty:0,
+        sticker_special
+      };
+      if(ref) insertPayload.reference_id = ref.id;
+      r=await api(SUPABASE_TABLE,{method:'POST',body:JSON.stringify(insertPayload)});
+    }
     if(!r.ok)throw new Error(await r.text());
-    ['cloudNumber','cloudName','cloudNote'].forEach(id=>document.getElementById(id).value='');document.getElementById('cloudQty').value=1;document.getElementById('cloudSpecial').checked=false;
+    ['cloudName','cloudNote'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('cloudNumber').value='';
+    document.getElementById('cloudQty').value=1;
+    document.getElementById('cloudSpecial').checked=false;
     closeCloudForm();await loadCloud();
-  }catch(e){alert('Erreur Supabase: '+String(e.message||e).slice(0,300))}
+  }catch(e){alert('Erreur Supabase: '+String(e.message||e).slice(0,500))}
   finally{btn.disabled=false;btn.textContent='Enregistrer'}
 }
 async function deleteCloudItem(id){if(!confirm('Supprimer cette ligne ?'))return;try{const r=await api(`${SUPABASE_TABLE}?id=eq.${id}`,{method:'DELETE'});if(!r.ok)throw new Error(await r.text());await loadCloud()}catch(e){alert('Erreur suppression: '+String(e.message||e).slice(0,250))}}
@@ -918,6 +1015,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
   document.getElementById('tradeBtn')?.addEventListener('click',openTradePanel);
   document.getElementById('tradeClose')?.addEventListener('click',()=>document.getElementById('tradePanel')?.classList.add('hidden'));
   document.getElementById('cancelCloudItem')?.addEventListener('click',closeCloudForm);
+  document.getElementById('cloudCountry')?.addEventListener('change',updateStickerNumberOptions);
+  document.getElementById('cloudNumber')?.addEventListener('change',syncCloudNameFromReference);
   document.getElementById('saveCloudItem')?.addEventListener('click',saveCloudItem);
   document.getElementById('close')?.addEventListener('click',closeModal);
   document.getElementById('modal')?.addEventListener('click',(e)=>{if(e.target?.id==='modal')closeModal();});
