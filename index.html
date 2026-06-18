@@ -327,6 +327,12 @@
   .special-family-card .legend-photo{height:255px!important;}
 }
 
+
+/* --- v17h30: modal simplifiée + bouton carte préférée --- */
+#scanini,#copy{display:none!important}
+.highlight-btn{background:linear-gradient(135deg,#fff7c7,#ffd23f);color:#10194e;border-radius:18px;padding:14px 18px;font-weight:1000}
+.highlight-btn.is-active{background:#dcfce7;color:#166534}
+
 </style>
 </head>
 <body>
@@ -388,7 +394,7 @@
 
   <div class="footer">Données checklist issues de PaniniReference, affichage privé de collectionneur. Les images joueurs sont chargées automatiquement depuis Wikipédia quand disponibles, sinon une carte stylisée est affichée. Photo DIBU: Wikimedia Commons.</div>
 </div>
-<div class="modal" id="modal"><div class="panel"><button class="close" id="close">×</button><div class="player-img" id="photo"><div class="shirt">⚽</div><div class="loader" id="loader">recherche image...</div></div><div class="details"><span class="badge" id="badge"></span><h2 id="mName"></h2><p id="mSub"></p><div class="info"><div class="box"><small>Vignette</small><b id="mSticker"></b></div><div class="box"><small>Type</small><b id="mType"></b></div><div class="box"><small>Club</small><b id="mClub"></b></div><div class="box"><small>Source</small><b>PaniniReference</b></div></div><div class="actions"><button class="primary" id="toggleFound">Marquer trouvée</button><a class="ghost" id="scanini" target="_blank" rel="noopener" style="text-decoration:none;padding:14px 18px;border-radius:18px;font-weight:900">Ouvrir Scanini</a><button class="ghost" id="copy">Copier code</button></div></div></div></div>
+<div class="modal" id="modal"><div class="panel"><button class="close" id="close">×</button><div class="player-img" id="photo"><div class="shirt">⚽</div><div class="loader" id="loader">recherche image...</div></div><div class="details"><span class="badge" id="badge"></span><h2 id="mName"></h2><p id="mSub"></p><div class="info"><div class="box"><small>Vignette</small><b id="mSticker"></b></div><div class="box"><small>Type</small><b id="mType"></b></div><div class="box"><small>Club</small><b id="mClub"></b></div><div class="box"><small>Source</small><b>PaniniReference</b></div></div><div class="actions"><button class="primary" id="toggleFound">Marquer trouvée</button><button class="highlight-btn" id="toggleHighlight">⭐ Mettre en carte préférée</button></div></div></div></div>
 <script>
 const ALBUM_SIZE=980;
 // v2: plus aucune donnée joueur/pays en dur dans l'index.
@@ -899,12 +905,15 @@ function openCloudCard(id){
   }else{
     photoEl.innerHTML = '<div class="shirt">⚽</div>';
   }
-  const scan=document.getElementById('scanini');
-  if(scan){scan.href=`https://fanlink.lat/catalogo`;scan.textContent='Ouvrir FanLink';}
-  const copy=document.getElementById('copy');
-  if(copy){copy.onclick=()=>navigator.clipboard?.writeText(`${stickerCode(row)} ${name}`);}
   const toggle=document.getElementById('toggleFound');
   if(toggle){toggle.textContent = normQty(row.quantity_missing)>0 ? 'Marquer trouvée' : 'OK'; toggle.onclick=()=>alert('Prochaine étape: on branchera ce bouton pour modifier la quantité.');}
+  const h=document.getElementById('toggleHighlight');
+  if(h){
+    const active = normQty(row.sticker_special)>0;
+    h.textContent = active ? '⭐ Déjà en carte préférée' : '⭐ Mettre en carte préférée';
+    h.classList.toggle('is-active', active);
+    h.onclick=()=>setHighlightFromModal(row);
+  }
   document.getElementById('modal')?.classList.add('open');
 }
 function closeModal(){document.getElementById('modal')?.classList.remove('open')}
@@ -960,6 +969,34 @@ async function openTradePanel(){
 
 async function openCloudForm(mode){cloudMode=mode;document.getElementById('cloudFormTitle').textContent=mode==='missing'?'Nouveau manque':'Nouveau double';document.getElementById('cloudForm').classList.add('open');try{await loadReferenceCache()}catch(e){} updateStickerNumberOptions();document.getElementById('cloudCountry').focus()}
 function closeCloudForm(){document.getElementById('cloudForm').classList.remove('open')}
+function cleanPaniniPayload(payload){
+  const allowed = new Set(['owner_id','country_id','sticker_number','reference_id','note','quantity_missing','quantity_double','sticker_special']);
+  return Object.fromEntries(Object.entries(payload).filter(([k,v]) => allowed.has(k) && v !== undefined));
+}
+async function patchPaniniRow(id,payload){
+  const safe = cleanPaniniPayload(payload);
+  const r = await api(`${SUPABASE_TABLE}?id=eq.${Number(id)}`,{method:'PATCH',body:JSON.stringify(safe)});
+  if(!r.ok)throw new Error(await r.text());
+  return r;
+}
+async function setHighlightFromModal(row){
+  if(!row?.id)return;
+  const next = normQty(row.sticker_special)>0 ? 0 : 1;
+  const btn=document.getElementById('toggleHighlight');
+  if(btn){btn.disabled=true;btn.textContent=next?'Mise en carte préférée...':'Retrait du highlight...';}
+  try{
+    await patchPaniniRow(row.id,{sticker_special:next});
+    row.sticker_special=next;
+    const idx=cloudRows.findIndex(r=>Number(r.id)===Number(row.id));
+    if(idx>=0)cloudRows[idx].sticker_special=next;
+    closeModal();
+    await loadCloud();
+  }catch(e){
+    alert('Erreur Supabase: '+String(e.message||e).slice(0,500));
+  }finally{
+    if(btn)btn.disabled=false;
+  }
+}
 async function saveCloudItem(){
   const country_id=Number(document.getElementById('cloudCountry').value);
   const sticker_number=Number(document.getElementById('cloudNumber').value);
@@ -982,7 +1019,7 @@ async function saveCloudItem(){
   try{
     let r;
     if(existing){
-      r=await api(`${SUPABASE_TABLE}?id=eq.${Number(existing.id)}`,{method:'PATCH',body:JSON.stringify(payload)});
+      r=await patchPaniniRow(existing.id,payload);
     }else{
       const insertPayload={
         owner_id:currentOwnerId,
@@ -994,7 +1031,7 @@ async function saveCloudItem(){
         sticker_special
       };
       if(ref) insertPayload.reference_id = ref.id;
-      r=await api(SUPABASE_TABLE,{method:'POST',body:JSON.stringify(insertPayload)});
+      r=await api(SUPABASE_TABLE,{method:'POST',body:JSON.stringify(cleanPaniniPayload(insertPayload))});
     }
     if(!r.ok)throw new Error(await r.text());
     ['cloudName','cloudNote'].forEach(id=>document.getElementById(id).value='');
