@@ -146,7 +146,7 @@
     <div class="cloud-head"><div><h2 class="cloud-title">Détail de l'album partagé</h2><p class="cloud-sub">Compte actif: <b id="activeOwnerLabel">Maé, Robin et Lenny</b>. Chaque compte possède ses propres manques et ses propres doubles.</p></div><div class="cloud-actions"><button class="cloud-btn" id="newMissing">+ Nouveau manque</button><button class="cloud-btn alt" id="newDouble">+ Nouveau double</button></div></div>
     <div class="cloud-stats"><div class="cloud-stat"><b id="cloudMissingTotal">0</b><span>manques saisis</span></div><div class="cloud-stat"><b id="cloudDoubleTotal">0</b><span>doubles saisis</span></div><div class="cloud-stat"><b id="cloudCountryTotal">0</b><span>pays concernés</span></div></div>
     <div class="cloud-tabs"><button class="cloud-tab active" data-cloudtab="graph">Par pays</button><button class="cloud-tab" data-cloudtab="missing">Manques</button><button class="cloud-tab" data-cloudtab="double">Doubles</button></div>
-    <div class="cloud-form" id="cloudForm"><h3 id="cloudFormTitle">Nouveau manque</h3><div class="cloud-grid-form"><select id="cloudCountry"><option value="">Pays / série...</option></select><input id="cloudNumber" type="number" min="1" placeholder="No: 4" /><input id="cloudName" placeholder="Nom: Leo Ostigård" /><input id="cloudQty" type="number" min="1" value="1" placeholder="Qté" /><input id="cloudNote" placeholder="Note facultative / texte highlight" /><label class="cloud-check"><input id="cloudSpecial" type="checkbox" /> Highlight</label></div><div class="cloud-form-actions"><button class="cloud-save" id="saveCloudItem">Enregistrer</button><button class="cloud-cancel" id="cancelCloudItem">Annuler</button></div></div>
+    <div class="cloud-form" id="cloudForm"><h3 id="cloudFormTitle">Nouveau manque</h3><div class="cloud-grid-form"><select id="cloudCountry"><option value="">Pays / série...</option></select><input id="cloudNumber" type="number" min="1" placeholder="No: 4" /><input id="cloudName" placeholder="Nom auto depuis PaniniReference" /><input id="cloudQty" type="number" min="1" value="1" placeholder="Qté" /><input id="cloudNote" placeholder="Note facultative / texte highlight" /><label class="cloud-check"><input id="cloudSpecial" type="checkbox" /> Highlight</label></div><div class="cloud-form-actions"><button class="cloud-save" id="saveCloudItem">Enregistrer</button><button class="cloud-cancel" id="cancelCloudItem">Annuler</button></div></div>
     <div id="cloudContent"><div class="cloud-empty">Chargement Supabase...</div></div><div class="cloud-help">Exemple: Norvège 4 peut être un manque pendant que Norvège 5, 6, 7, 8 sont des doubles. Les deux listes sont séparées.</div>
   </section>
 
@@ -157,17 +157,17 @@
     <div class="empty" id="empty">Rien ne correspond à ta recherche.</div>
   </section>
 
-  <div class="footer">Données checklist issues de Scanini, affichage privé de collectionneur. Les images joueurs sont chargées automatiquement depuis Wikipédia quand disponibles, sinon une carte stylisée est affichée. Photo DIBU: Wikimedia Commons.</div>
+  <div class="footer">Données checklist issues de PaniniReference, affichage privé de collectionneur. Les images joueurs sont chargées automatiquement depuis Wikipédia quand disponibles, sinon une carte stylisée est affichée. Photo DIBU: Wikimedia Commons.</div>
 </div>
 <div class="modal" id="modal"><button class="close" id="close">×</button><div class="panel"><div class="player-img" id="photo"><div class="shirt">⚽</div><div class="loader" id="loader">recherche image...</div></div><div class="details"><span class="badge" id="badge"></span><h2 id="mName"></h2><p id="mSub"></p><div class="info"><div class="box"><small>Vignette</small><b id="mSticker"></b></div><div class="box"><small>Type</small><b id="mType"></b></div><div class="box"><small>Club</small><b id="mClub"></b></div><div class="box"><small>Source</small><b>Scanini / Wiki</b></div></div><div class="actions"><button class="primary" id="toggleFound">Marquer trouvée</button><a class="ghost" id="scanini" target="_blank" rel="noopener" style="text-decoration:none;padding:14px 18px;border-radius:18px;font-weight:900">Ouvrir Scanini</a><button class="ghost" id="copy">Copier code</button></div></div></div></div>
 <script>
-const ALBUM_SIZE=968;
+const ALBUM_SIZE=980;
 // v2: plus aucune donnée joueur/pays en dur dans l'index.
 // Les pays viennent de la table "Pays" et les cartes de la table "Panini".
 let filter='all', current=null;
 
 const FLAG_BY_PANINI={
-  RSA:'za',CZE:'cz',CAN:'ca',BIH:'ba',QAT:'qa',SUI:'ch',BRA:'br',SCO:'gb-sct',USA:'us',PAR:'py',TUR:'tr',CIV:'ci',ECU:'ec',JPN:'jp',EGY:'eg',IRN:'ir',NZL:'nz',CPV:'cv',KSA:'sa',URU:'uy',IRQ:'iq',NOR:'no',ARG:'ar',ALG:'dz',AUT:'at',JOR:'jo',POR:'pt',COD:'cd',UZB:'uz',CRO:'hr',GHA:'gh',PAN:'pa',GER:'de',AUS:'au',BEL:'be',COL:'co',KOR:'kr',CUW:'cw',ESP:'es',HAI:'ht',MAR:'ma',MEX:'mx',NED:'nl',SEN:'sn',TUN:'tn'
+  RSA:'za',CZE:'cz',CAN:'ca',BIH:'ba',QAT:'qa',SUI:'ch',BRA:'br',SCO:'gb-sct',USA:'us',PAR:'py',TUR:'tr',CIV:'ci',ECU:'ec',JPN:'jp',EGY:'eg',IRN:'ir',NZL:'nz',CPV:'cv',KSA:'sa',URU:'uy',IRQ:'iq',NOR:'no',ARG:'ar',ALG:'dz',AUT:'at',JOR:'jo',POR:'pt',COD:'cd',UZB:'uz',CRO:'hr',GHA:'gh',PAN:'pa',GER:'de',AUS:'au',BEL:'be',COL:'co',KOR:'kr',CUW:'cw',ESP:'es',HAI:'ht',MAR:'ma',MEX:'mx',NED:'nl',SEN:'sn',TUN:'tn',FRA:'fr',ENG:'gb-eng',SWE:'se',FWC:''
 };
 function flagUrlByCode(code){const f=FLAG_BY_PANINI[String(code||'').toUpperCase()];return f?`https://flagcdn.com/w80/${f}.png`:''}
 function countryFlagHtml(code, cls='flag'){
@@ -203,6 +203,7 @@ const SUPABASE_KEY = "sb_publishable__sZeOPbtNwi4DHSG-MjshQ_6L9aixqP";
 const SUPABASE_TABLE = "Panini";
 const OWNER_TABLE = "Owner";
 const COUNTRY_TABLE = "Pays";
+const REFERENCE_TABLE = "PaniniReference";
 const DEFAULT_OWNER_NAME = "Maé, Robin et Lenny";
 const HIGHLIGHT_IMAGES = [
   "assets/MaéRobin0.png",
@@ -214,7 +215,7 @@ const HIGHLIGHT_IMAGES = [
   "assets/MaéRobin6.jpeg"
 ];
 let cloudRows = [], cloudTab = "graph", cloudMode = "graph";
-let owners = [], countries = [];
+let owners = [], countries = [], referenceRows = [];
 let currentOwnerId = Number(localStorage.getItem('akada-panini-owner-id') || 0);
 let currentOwnerName = localStorage.getItem('akada-panini-owner-name') || DEFAULT_OWNER_NAME;
 let carouselTimer = null;
@@ -236,6 +237,23 @@ function normQty(v){return Number(v||0)}
 function countryById(id){return countries.find(c=>Number(c.country_id)===Number(id)) || null}
 function countryCode(id){return countryById(id)?.initiale_panini || '?'}
 function countryName(id){const c=countryById(id);return c ? `${c.initiale_panini} · ${c.nom}` : 'Sans pays'}
+function refById(id){return referenceRows.find(r=>Number(r.id)===Number(id)) || null}
+function refByCountryNumber(country_id, sticker_number){return referenceRows.find(r=>Number(r.country_id)===Number(country_id) && Number(r.sticker_number)===Number(sticker_number)) || null}
+function enrichPaniniRow(row){
+  const ref = refById(row.reference_id) || refByCountryNumber(row.country_id,row.sticker_number);
+  return {...row,_ref:ref||null};
+}
+function stickerName(row){return row?._ref?.sticker_name || row?.sticker_name || 'Nom non renseigné'}
+function stickerPhoto(row){return row?._ref?.photo_url || row?.photo_url || row?.image_url || row?.img_url || row?.picture_url || row?.image || ''}
+function stickerCode(row){return row?._ref?.sticker_code || `${countryCode(row?.country_id)}${row?.sticker_number||''}`}
+function stickerType(row){return row?._ref?.sticker_type || row?.sticker_type || ''}
+function stickerSection(row){return row?._ref?.section || countryById(row?.country_id)?.nom || ''}
+async function loadReferenceCache(){
+  if(referenceRows.length)return;
+  const rr = await api(`${REFERENCE_TABLE}?select=*&order=initiale_panini.asc&order=sticker_number.asc`);
+  if(!rr.ok)throw new Error(await rr.text());
+  referenceRows = await rr.json();
+}
 function saveOwnerChoice(){localStorage.setItem('akada-panini-owner-id',String(currentOwnerId||''));localStorage.setItem('akada-panini-owner-name',currentOwnerName||'')}
 
 function ownerPassword(o){return String(o?.mot_de_passe ?? '').trim()}
@@ -351,9 +369,10 @@ async function loadCloud(){
   const lab=document.getElementById('activeOwnerLabel');if(lab)lab.textContent=currentOwnerName;
   el.innerHTML='<div class="cloud-empty">Chargement Supabase...</div>';
   try{
+    await loadReferenceCache();
     const r=await api(`${SUPABASE_TABLE}?select=*&owner_id=eq.${currentOwnerId}&order=country_id.asc&order=sticker_number.asc`);
     if(!r.ok)throw new Error(await r.text());
-    cloudRows=await r.json();
+    cloudRows=(await r.json()).map(enrichPaniniRow);
     renderCloud();
     renderSupabaseSpotlight();
   }catch(e){el.innerHTML=`<div class="cloud-error">Erreur Supabase: ${esc(String(e.message||e).slice(0,300))}</div>`}
@@ -364,11 +383,11 @@ function cloudRowsForTab(){
   const q=(document.getElementById('q')?.value||'').toLowerCase().trim();
   const enrich=r=>{
     const c=countryById(r.country_id);
-    const text=[c?.nom,c?.initiale_panini,r.sticker_number,r.sticker_name,r.note].join(' ').toLowerCase();
+    const text=[c?.nom,c?.initiale_panini,r.sticker_number,stickerName(r),stickerCode(r),stickerSection(r),r.note].join(' ').toLowerCase();
     return !q || text.includes(q);
   };
   const applyChip=r=>{
-    const special=normQty(r.sticker_special)>0 || /team|logo|fifa|history/i.test(String(r.sticker_name||''));
+    const special=normQty(r.sticker_special)>0 || /team|logo|fifa|history/i.test(String(stickerName(r)+' '+stickerType(r)+' '+stickerSection(r)));
     if(filter==='players') return !special;
     if(filter==='specials') return special;
     if(filter==='stars') return normQty(r.sticker_special)>0;
@@ -391,13 +410,13 @@ function renderCloudAlbum(rows,title){
     const c=countryById(rs[0].country_id);
     const flagHtml=countryFlagHtml(code,'flag');
     const count=rs.reduce((a,r)=>a+normQty(r._viewQty||0),0);
-    return `<article class="country"><div class="head">${flagHtml}<div class="name">${esc(c?.nom||code)}</div><div class="count">${count}</div></div><div class="stickers">${rs.map(r=>{const typ=r._viewType==='double'?'double-card':'missing-card';const qty=normQty(r._viewQty||0);return `<div class="sticker ${typ} ${normQty(r.sticker_special)>0?'foil dibu':''}" title="${esc(r.sticker_name||'')}"><div class="num">${esc(r.sticker_number)}${normQty(r.sticker_special)>0?'⭐':''}</div><div class="mini">${esc(r.sticker_name||'')}${qty>1?' ×'+qty:''}</div></div>`}).join('')}</div></article>`
+    return `<article class="country"><div class="head">${flagHtml}<div class="name">${esc(c?.nom||code)}</div><div class="count">${count}</div></div><div class="stickers">${rs.map(r=>{const typ=r._viewType==='double'?'double-card':'missing-card';const qty=normQty(r._viewQty||0);return `<div class="sticker ${typ} ${normQty(r.sticker_special)>0?'foil dibu':''}" title="${esc(stickerName(r))}" onclick="openCloudCard(${Number(r.id)})"><div class="num">${esc(r.sticker_number)}${normQty(r.sticker_special)>0?'⭐':''}</div><div class="mini">${esc(stickerName(r))}${qty>1?' ×'+qty:''}</div></div>`}).join('')}</div></article>`
   }).join('')}</div>`;
 }
 
 function renderTechnicalList(rows,type){
   if(!rows.length)return `<div class="cloud-empty">Rien dans cette liste.</div>`;
-  return rows.map(r=>`<div class="cloud-row"><div><b>${esc(countryCode(r.country_id))} ${esc(r.sticker_number)}</b><br><small>${esc(r.sticker_name||'Nom non renseigné')}${r.note?' - '+esc(r.note):''}</small></div><span class="cloud-badge missing">M ×${normQty(r.quantity_missing)}</span><span class="cloud-badge double">D ×${normQty(r.quantity_double)}</span><button class="cloud-delete" onclick="deleteCloudItem(${Number(r.id)})">Supprimer</button></div>`).join('');
+  return rows.map(r=>`<div class="cloud-row"><div><b>${esc(countryCode(r.country_id))} ${esc(r.sticker_number)}</b><br><small>${esc(stickerName(r))}${r.note?' - '+esc(r.note):''}</small></div><span class="cloud-badge missing">M ×${normQty(r.quantity_missing)}</span><span class="cloud-badge double">D ×${normQty(r.quantity_double)}</span><button class="cloud-delete" onclick="deleteCloudItem(${Number(r.id)})">Supprimer</button></div>`).join('');
 }
 
 function renderCloud(){
@@ -427,9 +446,9 @@ function cardFlagHtml(code){
 }
 
 function specialImageHtml(row, code){
-  const imageSrc = String(row.image_url || row.photo_url || row.img_url || row.picture_url || row.image || '').trim();
+  const imageSrc = String(stickerPhoto(row)).trim();
   if(imageSrc){
-    return `<img src="${esc(imageSrc)}" alt="${esc(row.sticker_name || code)}" onerror="this.parentElement.innerHTML='<div class=&quot;shirt&quot;>⭐</div>'">`;
+    return `<img src="${esc(imageSrc)}" alt="${esc(stickerName(row) || code)}" onerror="this.parentElement.innerHTML='<div class=&quot;shirt&quot;>⭐</div>'">`;
   }
   return `<div class="shirt" style="font-size:76px;line-height:1">⭐</div>
           <div style="position:absolute;left:18px;right:18px;bottom:18px;background:rgba(16,25,78,.88);color:#fff;border-radius:18px;padding:12px 10px;text-align:center;font-weight:1000;letter-spacing:.06em">
@@ -440,7 +459,7 @@ function specialImageHtml(row, code){
 function parseHighlightText(row, code){
   const rawNote = String(row.note || '').trim();
   const explicitTitle = String(row.highlight_title || row.title || row.titre || '').trim();
-  const cardName = String(row.sticker_name || 'Carte spéciale').trim();
+  const cardName = String(stickerName(row) || 'Carte spéciale').trim();
   let headline = explicitTitle;
   let description = '';
 
@@ -548,11 +567,40 @@ function cardLabel(row){
   return `${countryCode(row.country_id)} ${row.sticker_number}`;
 }
 function cardLongLabel(row){
-  return `${countryCode(row.country_id)} ${row.sticker_number}${row.sticker_name ? ' - '+row.sticker_name : ''}`;
+  return `${countryCode(row.country_id)} ${row.sticker_number}${stickerName(row) ? ' - '+stickerName(row) : ''}`;
 }
 function sameCard(a,b){
   return Number(a.country_id)===Number(b.country_id) && Number(a.sticker_number)===Number(b.sticker_number);
 }
+function openCloudCard(id){
+  const row = cloudRows.find(r=>Number(r.id)===Number(id));
+  if(!row)return;
+  current=row;
+  const code = countryCode(row.country_id);
+  const name = stickerName(row);
+  const photo = stickerPhoto(row);
+  const type = stickerType(row) || (normQty(row.sticker_special)>0 ? 'special' : 'player');
+  document.getElementById('badge').innerHTML = `${countryFlagHtml(code,'flag')} ${esc(code)} ${esc(row.sticker_number)}${normQty(row.sticker_special)>0?' · ⭐ Highlight':''}`;
+  document.getElementById('mName').textContent = name;
+  document.getElementById('mSub').textContent = row.note || `${stickerSection(row)} · ${stickerCode(row)}`;
+  document.getElementById('mSticker').textContent = stickerCode(row);
+  document.getElementById('mType').textContent = type || 'vignette';
+  document.getElementById('mClub').textContent = row._ref?.club || '—';
+  const photoEl=document.getElementById('photo');
+  if(photo){
+    photoEl.innerHTML = `<img src="${esc(photo)}" alt="${esc(name)}" onerror="this.parentElement.innerHTML='<div class=&quot;shirt&quot;>⚽</div>'">`;
+  }else{
+    photoEl.innerHTML = '<div class="shirt">⚽</div>';
+  }
+  const scan=document.getElementById('scanini');
+  if(scan){scan.href=`https://fanlink.lat/catalogo`;scan.textContent='Ouvrir FanLink';}
+  const copy=document.getElementById('copy');
+  if(copy){copy.onclick=()=>navigator.clipboard?.writeText(`${stickerCode(row)} ${name}`);}
+  const toggle=document.getElementById('toggleFound');
+  if(toggle){toggle.textContent = normQty(row.quantity_missing)>0 ? 'Marquer trouvée' : 'OK'; toggle.onclick=()=>alert('Prochaine étape: on branchera ce bouton pour modifier la quantité.');}
+  document.getElementById('modal')?.classList.add('open');
+}
+function closeModal(){document.getElementById('modal')?.classList.remove('open')}
 async function openTradePanel(){
   const panel=document.getElementById('tradePanel');
   const content=document.getElementById('tradeContent');
@@ -562,9 +610,10 @@ async function openTradePanel(){
   content.innerHTML='Recherche des échanges possibles...';
   try{
     if(!owners.length || !countries.length){await loadRefs();}
+    await loadReferenceCache();
     const r=await api(`${SUPABASE_TABLE}?select=*&order=owner_id.asc&order=country_id.asc&order=sticker_number.asc`);
     if(!r.ok)throw new Error(await r.text());
-    const rows=await r.json();
+    const rows=(await r.json()).map(enrichPaniniRow);
     const myMissing=rows.filter(r=>Number(r.owner_id)===Number(currentOwnerId) && normQty(r.quantity_missing)>0);
     const myDoubles=rows.filter(r=>Number(r.owner_id)===Number(currentOwnerId) && normQty(r.quantity_double)>0);
     const othersDoubles=rows.filter(r=>Number(r.owner_id)!==Number(currentOwnerId) && normQty(r.quantity_double)>0);
@@ -607,12 +656,16 @@ function closeCloudForm(){document.getElementById('cloudForm').classList.remove(
 async function saveCloudItem(){
   const country_id=Number(document.getElementById('cloudCountry').value);
   const sticker_number=Number(document.getElementById('cloudNumber').value);
-  const sticker_name=document.getElementById('cloudName').value.trim();
+  let sticker_name=document.getElementById('cloudName').value.trim();
   const qty=Math.max(1,Number(document.getElementById('cloudQty').value||1));
   const note=document.getElementById('cloudNote').value.trim();
   const sticker_special=document.getElementById('cloudSpecial').checked ? 1 : 0;
   if(!country_id||!sticker_number){alert('Il faut au minimum le pays et le numéro.');return}
+  try{await loadReferenceCache()}catch(e){}
+  const ref = refByCountryNumber(country_id,sticker_number);
+  if(ref && !sticker_name) sticker_name = ref.sticker_name;
   const payload={owner_id:currentOwnerId,country_id,sticker_number,sticker_name,note,quantity_missing:cloudMode==='missing'?qty:0,quantity_double:cloudMode==='double'?qty:0,sticker_special};
+  if(ref) payload.reference_id = ref.id;
   const btn=document.getElementById('saveCloudItem');btn.disabled=true;btn.textContent='Enregistrement...';
   try{
     const r=await api(SUPABASE_TABLE,{method:'POST',body:JSON.stringify(payload)});
@@ -633,6 +686,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
   document.getElementById('tradeClose')?.addEventListener('click',()=>document.getElementById('tradePanel')?.classList.add('hidden'));
   document.getElementById('cancelCloudItem')?.addEventListener('click',closeCloudForm);
   document.getElementById('saveCloudItem')?.addEventListener('click',saveCloudItem);
+  document.getElementById('close')?.addEventListener('click',closeModal);
+  document.getElementById('modal')?.addEventListener('click',(e)=>{if(e.target?.id==='modal')closeModal();});
   document.querySelectorAll('.cloud-tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.cloud-tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');cloudTab=b.dataset.cloudtab;renderCloud()}));
 });
 </script>
