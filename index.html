@@ -115,6 +115,113 @@
   .close{right:10px;top:10px}
 }
 
+/* --- v16h37: spotlight double carousel propre --- */
+.spotlight{
+  grid-template-columns:300px minmax(0,1fr) 230px;
+}
+.spotlight .legend-copy{
+  align-self:center;
+  min-width:0;
+}
+.spotlight .legend-copy .spot-carousel{
+  display:none!important;
+}
+.special-family-card .legend-photo{
+  height:272px;
+}
+.special-family-card .legend-photo img{
+  object-fit:cover;
+  object-position:center top;
+}
+.special-family-card .legend-inner{
+  padding:12px;
+}
+.special-family-card .legend-meta{
+  margin-top:12px;
+  white-space:normal;
+}
+.family-mirror-card{
+  width:220px;
+  height:300px;
+  justify-self:end;
+  transform:rotate(4deg);
+  opacity:.96;
+}
+.family-mirror-card:hover{
+  transform:rotate(3deg) translateY(-5px);
+}
+.family-mirror-card .legend-photo{
+  height:100%;
+}
+.family-mirror-card .legend-photo img{
+  transform:none;
+  object-fit:cover;
+  object-position:center center;
+}
+.family-mirror-card .legend-photo:after{
+  background:linear-gradient(125deg,rgba(255,255,255,.40),transparent 34%,rgba(255,255,255,.10));
+}
+.family-mirror-card .card-rank{
+  left:auto;
+  right:16px;
+  transform:none;
+}
+.family-mirror-card .card-flag{
+  left:16px;
+  right:auto;
+}
+.legend-card .legend-name.is-hidden{
+  display:none;
+}
+@media(max-width:940px){
+  .spotlight{
+    grid-template-columns:220px 1fr;
+  }
+  .family-mirror-card{
+    grid-column:1/-1;
+    justify-self:center;
+    width:220px;
+    height:285px;
+  }
+  .special-family-card .legend-photo{height:210px;}
+}
+@media(max-width:560px){
+  .hero-topbar{gap:12px;}
+  .hero-owner-zone{
+    width:100%;
+    overflow:visible!important;
+    flex-wrap:wrap!important;
+    justify-content:flex-start;
+    padding-bottom:0;
+  }
+  .hero-owner-zone .owner-tab{
+    white-space:normal!important;
+    max-width:100%;
+    flex:0 1 auto;
+    line-height:1.15;
+  }
+  .hero-owner-zone .owner-add{
+    flex:0 1 auto;
+  }
+  .spotlight{
+    grid-template-columns:1fr;
+  }
+  .family-mirror-card{
+    width:220px;
+    height:280px;
+  }
+  .special-family-card .legend-photo{height:210px;}
+}
+
+/* bouton fermeture vraiment attaché à la carte ouverte, pas à la fenêtre */
+.modal .panel{position:relative}
+.modal .close{
+  position:absolute;
+  right:14px;
+  top:14px;
+  z-index:20;
+}
+
 </style>
 </head>
 <body>
@@ -236,6 +343,7 @@ let owners = [], countries = [], referenceRows = [];
 let currentOwnerId = Number(localStorage.getItem('akada-panini-owner-id') || 0);
 let currentOwnerName = localStorage.getItem('akada-panini-owner-name') || DEFAULT_OWNER_NAME;
 let carouselTimer = null;
+let spotlightTimer = null;
 
 function api(path, options={}){
   return fetch(`${SUPABASE_URL}/rest/v1/${path}`,{
@@ -515,23 +623,33 @@ function parseHighlightText(row, code){
   return {headline, description, cardName};
 }
 
-function renderSupabaseSpotlight(){
-  const special = cloudRows.find(r => Number(r.owner_id) === Number(currentOwnerId) && normQty(r.sticker_special) > 0)
-               || cloudRows.find(r => normQty(r.sticker_special) > 0);
-  if(!special){renderShowcaseFallback();return;}
+function spotlightSpecialRows(){
+  const own = cloudRows.filter(r => Number(r.owner_id) === Number(currentOwnerId) && normQty(r.sticker_special) > 0);
+  if(own.length)return own;
+  return cloudRows.filter(r => normQty(r.sticker_special) > 0);
+}
 
+function renderSupabaseSpotlight(){
+  const specials = spotlightSpecialRows();
+  if(!specials.length){renderShowcaseFallback();return;}
+  renderSpotlightSlide(specials,0);
+  startSpotlightSpecialCarousel(specials);
+}
+
+function renderSpotlightSlide(specials,index){
+  const special = specials[index % specials.length];
   const code = countryCode(special.country_id);
-  const ownerLabel = ownerNameById(special.owner_id || currentOwnerId);
   const parsed = parseHighlightText(special, code);
   const spot = document.getElementById('spotlight');
   if(!spot)return;
+  const badge = specials.length > 1 ? `Special ${index % specials.length + 1}/${specials.length}` : 'Special 1';
 
   spot.innerHTML = `<span class="eclat one"></span><span class="eclat two"></span><span class="eclat three"></span>
   <div class="legend-card special-family-card">
     <div class="legend-inner">
-      ${cardFlagHtml(code)}<span class="card-rank">Special 1</span>
+      ${cardFlagHtml(code)}<span class="card-rank">${esc(badge)}</span>
       <div class="legend-photo">${specialImageHtml(special, code)}</div>
-      <div class="legend-name">${esc(ownerLabel)}</div>
+      <div class="legend-name is-hidden"></div>
       <div class="legend-meta">${esc(code)} ${esc(special.sticker_number || '')} · ${esc(parsed.cardName)}</div>
     </div>
   </div>
@@ -540,7 +658,13 @@ function renderSupabaseSpotlight(){
     <h2>${esc(parsed.headline)}</h2>
     <p class="spot-note">${esc(parsed.description)}</p>
     <button class="primary" id="spotlightSearchBtn">Voir dans le carnet</button>
-    <div class="spot-carousel family-carousel"><img id="spotCarouselImg" src="${esc(HIGHLIGHT_IMAGES[0] || '')}" alt="Maé Robin Lenny"></div>
+  </div>
+  <div class="legend-card family-mirror-card" aria-label="Carousel Maé Robin Lenny">
+    <div class="legend-inner">
+      <span class="card-rank">Chasseurs</span>
+      <div class="card-flag" style="display:grid;place-items:center;font-size:16px">📸</div>
+      <div class="legend-photo"><img id="spotCarouselImg" src="${esc(HIGHLIGHT_IMAGES[0] || '')}" alt="Maé Robin Lenny"></div>
+    </div>
   </div>`;
 
   startSpotCarousel();
@@ -557,8 +681,19 @@ function renderSupabaseSpotlight(){
   });
 }
 
+function startSpotlightSpecialCarousel(specials){
+  clearInterval(spotlightTimer);
+  if(!specials || specials.length <= 1)return;
+  let i = 0;
+  spotlightTimer = setInterval(()=>{
+    i = (i + 1) % specials.length;
+    renderSpotlightSlide(specials,i);
+  },4200);
+}
+
 function renderShowcaseFallback(){
   clearInterval(carouselTimer);
+  clearInterval(spotlightTimer);
   const spot = document.getElementById('spotlight');
   if(!spot)return;
   spot.innerHTML = `<span class="eclat one"></span><span class="eclat two"></span><span class="eclat three"></span>
