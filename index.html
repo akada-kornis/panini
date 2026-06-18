@@ -162,66 +162,39 @@
 <div class="modal" id="modal"><button class="close" id="close">×</button><div class="panel"><div class="player-img" id="photo"><div class="shirt">⚽</div><div class="loader" id="loader">recherche image...</div></div><div class="details"><span class="badge" id="badge"></span><h2 id="mName"></h2><p id="mSub"></p><div class="info"><div class="box"><small>Vignette</small><b id="mSticker"></b></div><div class="box"><small>Type</small><b id="mType"></b></div><div class="box"><small>Club</small><b id="mClub"></b></div><div class="box"><small>Source</small><b>Scanini / Wiki</b></div></div><div class="actions"><button class="primary" id="toggleFound">Marquer trouvée</button><a class="ghost" id="scanini" target="_blank" rel="noopener" style="text-decoration:none;padding:14px 18px;border-radius:18px;font-weight:900">Ouvrir Scanini</a><button class="ghost" id="copy">Copier code</button></div></div></div></div>
 <script>
 const ALBUM_SIZE=968;
-const teams=[
-{n:'Afrique du Sud',code:'RSA',flag:'za',slug:'south-africa',s:[[4,'Aubrey Modiba',''],[10,'Nkosinathi Sibisi','']]},
-{n:'Tchéquie',code:'CZE',flag:'cz',slug:'czechia',s:[[1,'Team Logo','foil']]},
-{n:'Canada',code:'CAN',flag:'ca',slug:'canada',s:[[1,'Team Logo','foil'],[6,'Riche Larvea','']]},
-{n:'Bosnie-Herzégovine',code:'BIH',flag:'ba',slug:'bosnia-and-herzegovina',s:[[13,'Team Photo','team'],[18,'Edin Dzeko','star']]},
-{n:'Qatar',code:'QAT',flag:'qa',slug:'qatar',s:[[12,'Ahmed Fatehi','']]},
-{n:'Suisse',code:'SUI',flag:'ch',slug:'switzerland',s:[[3,'Yvon Mvogo',''],[10,'Denis Zakaria','']]},
-{n:'Brésil',code:'BRA',flag:'br',slug:'brazil',s:[[7,'Danilo',''],[11,'Bruno Guimarães','star']]},
-{n:'Écosse',code:'SCO',flag:'gb-sct',slug:'scotland',s:[[20,'Ben Gannon-Doak','star']]},
-{n:'USA',code:'USA',flag:'us',slug:'united-states',s:[[8,'Tyler Adams','star']]},
-{n:'Paraguay',code:'PAR',flag:'py',slug:'paraguay',s:[[7,'Omar Alderete',''],[9,'Mathías Villasanti','']]},
-{n:'Turquie',code:'TUR',flag:'tr',slug:'turkey',s:[[17,'Can Uzun','star']]},
-{n:'Côte d\'Ivoire',code:'CIV',flag:'ci',slug:'cote-divoire',s:[[8,'Emmanuel Agbadou','']]},
-{n:'Équateur',code:'ECU',flag:'ec',slug:'ecuador',s:[[6,'Willian Pacho','star'],[8,'Joel Ordóñez','']]},
-{n:'Japon',code:'JPN',flag:'jp',slug:'japan',s:[[12,'Takefusa Kubo','star']]},
-{n:'Égypte',code:'EGY',flag:'eg',slug:'egypt',s:[[6,'Khaled Sobhi',''],[20,'Omar Marmoush','star']]},
-{n:'Iran',code:'IRN',flag:'ir',slug:'iran',s:[[8,'Hossein Kanaani','']]},
-{n:'Nouvelle-Zélande',code:'NZL',flag:'nz',slug:'new-zealand',s:[[14,'Matthew Garbett','']]},
-{n:'Cap-Vert',code:'CPV',flag:'cv',slug:'cape-verde',s:[[8,'Joao Paulo',''],[15,'Garry Rodrigues',''],[18,'Dailon Livramento','']]},
-{n:'Arabie saoudite',code:'KSA',flag:'sa',slug:'saudi-arabia',s:[[1,'Team Logo','foil'],[2,'Nawaf Alaqidi',''],[12,'Nasser Aldawsari','']]},
-{n:'Uruguay',code:'URU',flag:'uy',slug:'uruguay',s:[[6,'Matías Viña','']]},
-{n:'Irak',code:'IRQ',flag:'iq',slug:'iraq',s:[[8,'Manaf Younis',''],[13,'Team Photo','team'],[17,'Osama Rashid','']]},
-{n:'Norvège',code:'NOR',flag:'no',slug:'norway',s:[[4,'Leo Ostigård','']]},
-{n:'Argentine',code:'ARG',flag:'ar',slug:'argentina',legend:true,s:[[2,'Emiliano Martínez','dibu star','Aston Villa','https://commons.wikimedia.org/wiki/Special:FilePath/Emiliano%20Martinez.jpg']]},
-{n:'Algérie',code:'ALG',flag:'dz',slug:'algeria',s:[[9,'Houssem Aouar','star'],[18,'Amine Gouiri','']]},
-{n:'Autriche',code:'AUT',flag:'at',slug:'austria',s:[[12,'Konrad Laimer','star']]},
-{n:'Jordanie',code:'JOR',flag:'jo',slug:'jordan',s:[[1,'Team Logo','foil'],[12,'Mohannad Abu Taha',''],[15,'Musa Al-Taamari','star'],[19,'Mohammad Abu Zrayq','']]},
-{n:'Portugal',code:'POR',flag:'pt',slug:'portugal',s:[[4,'Ruben Dias','star'],[7,'Nuno Mendes','star'],[13,'Team Photo','team'],[19,'Pedro Neto','star']]},
-{n:'Congo',code:'COD',flag:'cd',slug:'dr-congo',s:[[10,'Edo Kayembe',''],[14,'Théo Bongonda','']]},
-{n:'Ouzbékistan',code:'UZB',flag:'uz',slug:'uzbekistan',s:[[1,'Team Logo','foil'],[8,'Khojiakbar Alijonov',''],[16,'Eldor Shomurodov','star']]},
-{n:'Croatie',code:'CRO',flag:'hr',slug:'croatia',s:[[3,'Duje Caleta-Car',''],[18,'Ante Budimir','']]},
-{n:'Ghana',code:'GHA',flag:'gh',slug:'ghana',s:[[2,'Lawrence Ati Zigi',''],[13,'Team Photo','team'],[18,'Jordan Ayew','star']]},
-{n:'Panama',code:'PAN',flag:'pa',slug:'panama',s:[[10,'Adalberto Carrasquilla','star']]},
-{n:'FWC',code:'FWC',flag:null,slug:'world-cup-history',special:true,s:[[11,'World Cup History 11','foil star']]}
-];
-const foundKey='akada-panini-found-v3';let found=new Set(JSON.parse(localStorage.getItem(foundKey)||'[]'));let filter='all',current=null;const total=teams.reduce((a,t)=>a+t.s.length,0);
-function save(){localStorage.setItem(foundKey,JSON.stringify([...found]));}
-function sid(t,num){return t.code+'-'+num}
-function flag(t){return t.flag?`https://flagcdn.com/w80/${t.flag}.png`:''}
-function scanini(t){return `https://scanini.app/teams/${t.slug}`}
-function allStickers(){return teams.flatMap(t=>t.s.map(s=>({team:t,num:s[0],name:s[1],tags:s[2]||'',club:s[3]||'',photo:s[4]||''})))}
-function isSpecial(st){return /foil|team|logo/i.test(st.tags)||/Team Logo|Team Photo|World Cup History/.test(st.name)}
-function render(){const q=document.getElementById('q').value.toLowerCase().trim();const grid=document.getElementById('grid');grid.innerHTML='';let shown=0;teams.forEach(t=>{let sticks=t.s.map(s=>({team:t,num:s[0],name:s[1],tags:s[2]||'',club:s[3]||'',photo:s[4]||''})).filter(st=>{let text=[t.n,t.code,st.num,st.name,st.tags,st.club].join(' ').toLowerCase();let ok=!q||text.includes(q);if(filter==='players') ok=ok&&!isSpecial(st);if(filter==='specials') ok=ok&&isSpecial(st);if(filter==='stars') ok=ok&&/star|dibu/.test(st.tags);if(filter==='todo') ok=ok&&!found.has(sid(t,st.num));return ok});if(!sticks.length)return;shown++;let done=sticks.every(st=>found.has(sid(t,st.num)));let card=document.createElement('article');card.className='country '+(done?'found ':'')+(t.legend?'legend-team':'');card.innerHTML=`<div class="head">${t.flag?`<img class="flag" src="${flag(t)}" onerror="this.style.display='none'">`:'<span>🏆</span>'}<div class="name">${t.n}</div><div class="count">${sticks.filter(st=>!found.has(sid(t,st.num))).length}/${sticks.length}</div></div><div class="stickers"></div>`;let box=card.querySelector('.stickers');sticks.forEach(st=>{let el=document.createElement('div');el.className='sticker '+(found.has(sid(t,st.num))?'done ':'')+(st.tags.includes('foil')?'foil ':'')+(st.tags.includes('dibu')?'dibu ':'');el.innerHTML=`<div class="num">${st.num}${st.tags.includes('dibu')?'⭐':''}</div><div class="mini">${st.name}</div>`;el.onclick=()=>openModal(st);box.appendChild(el)});grid.appendChild(card)});document.getElementById('empty').classList.toggle('show',!shown);updateStats();if(typeof renderSupabaseSpotlight==='function' && Array.isArray(cloudRows) && cloudRows.length){renderSupabaseSpotlight();}else if(typeof renderShowcaseFallback==='function'){renderShowcaseFallback();}}
+// v2: plus aucune donnée joueur/pays en dur dans l'index.
+// Les pays viennent de la table "Pays" et les cartes de la table "Panini".
+let filter='all', current=null;
+
+const FLAG_BY_PANINI={
+  RSA:'za',CZE:'cz',CAN:'ca',BIH:'ba',QAT:'qa',SUI:'ch',BRA:'br',SCO:'gb-sct',USA:'us',PAR:'py',TUR:'tr',CIV:'ci',ECU:'ec',JPN:'jp',EGY:'eg',IRN:'ir',NZL:'nz',CPV:'cv',KSA:'sa',URU:'uy',IRQ:'iq',NOR:'no',ARG:'ar',ALG:'dz',AUT:'at',JOR:'jo',POR:'pt',COD:'cd',UZB:'uz',CRO:'hr',GHA:'gh',PAN:'pa',GER:'de',AUS:'au',BEL:'be',COL:'co',KOR:'kr',CUW:'cw',ESP:'es',HAI:'ht',MAR:'ma',MEX:'mx',NED:'nl',SEN:'sn',TUN:'tn'
+};
+function flagUrlByCode(code){const f=FLAG_BY_PANINI[String(code||'').toUpperCase()];return f?`https://flagcdn.com/w80/${f}.png`:''}
+function countryFlagHtml(code, cls='flag'){
+  const url=flagUrlByCode(code);
+  return url ? `<img class="${cls}" src="${url}" alt="${esc(code)}" onerror="this.style.display='none'">` : `<span class="${cls}" style="display:grid;place-items:center;font-size:12px;font-weight:1000;color:#10194e">${esc(code||'★')}</span>`;
+}
+function save(){}
+function sid(t,num){return `${t?.code||''}-${num}`}
+function render(){ if(typeof renderCloud==='function') renderCloud(); updateStats(); }
 function updateStats(){
-  const rows = (typeof cloudRows !== 'undefined' && Array.isArray(cloudRows) && cloudRows.length) ? cloudRows : [];
-  const left = rows.length ? rows.reduce((a,r)=>a+Number(r.quantity_missing||0),0) : Math.max(0,total-found.size);
+  const rows = (typeof cloudRows !== 'undefined' && Array.isArray(cloudRows) && cloudRows) ? cloudRows : [];
+  const missingRows = rows.filter(r=>Number(r.quantity_missing||0)>0);
+  const left = missingRows.reduce((a,r)=>a+Number(r.quantity_missing||0),0);
   const done = Math.max(0, ALBUM_SIZE-left);
-  const countryCount = rows.length ? new Set(rows.filter(r=>Number(r.quantity_missing||0)>0||Number(r.quantity_double||0)>0).map(r=>r.country_id)).size : teams.length;
+  const countryCount = new Set(rows.filter(r=>Number(r.quantity_missing||0)>0||Number(r.quantity_double||0)>0).map(r=>r.country_id)).size;
   document.getElementById('total').textContent=ALBUM_SIZE;
-  document.getElementById('countries').textContent=countryCount;
   document.getElementById('left').textContent=left;
+  document.getElementById('countries').textContent=countryCount;
   let pct=Math.round(done/ALBUM_SIZE*100);
   document.getElementById('pct').textContent=pct+'%';
-  document.getElementById('fill').style.width=Math.max(0,Math.min(100,pct))+'%';
+  document.getElementById('fill').style.width=pct+'%';
 }
-function renderSpotlight(){if(typeof renderShowcaseFallback==='function'){renderShowcaseFallback();}}
-async function wikiImage(name){try{let url=`https://en.wikipedia.org/w/api.php?action=query&origin=*&generator=search&gsrsearch=${encodeURIComponent(name+' footballer')}&gsrlimit=1&prop=pageimages&pithumbsize=700&format=json`;let r=await fetch(url);let j=await r.json();let p=j.query&&j.query.pages&&Object.values(j.query.pages)[0];return p&&p.thumbnail&&p.thumbnail.source}catch(e){return null}}
-async function loadWiki(name,containerId,withLoader=true){let c=document.getElementById(containerId);if(!c)return;let img=await wikiImage(name);let loader=document.getElementById('loader');if(img){c.innerHTML=`<img src="${img}" alt="${name}">`+(withLoader?'':'')}else if(withLoader){c.innerHTML='<div class="shirt">⚽</div><div class="loader">image non trouvée - carte stylisée</div>'} if(loader)loader.style.display='none'}
-function openModal(st){current=st;let t=st.team;document.getElementById('modal').classList.add('open');document.getElementById('badge').innerHTML=`${t.flag?`<img class="flag" src="${flag(t)}">`:''}${t.code} · ${t.n}`;document.getElementById('mName').textContent=st.name;document.getElementById('mSub').textContent=st.tags.includes('dibu')?'DIBU en vedette - carte légendaire':'Vignette manquante à trouver';document.getElementById('mSticker').textContent=`${t.code} ${st.num}`;document.getElementById('mType').textContent=isSpecial(st)?'Spéciale / équipe':'Joueur';document.getElementById('mClub').textContent=st.club||'Club à compléter';document.getElementById('scanini').href=scanini(t);document.getElementById('toggleFound').textContent=found.has(sid(t,st.num))?'Remettre à trouver':'Marquer trouvée';document.getElementById('photo').innerHTML='<div class="shirt">⚽</div><div class="loader" id="loader">recherche image...</div>'; if(st.photo){document.getElementById('photo').innerHTML=`<img src="${st.photo}" alt="${st.name}">`} else if(!isSpecial(st)) loadWiki(st.name,'photo',true); else document.getElementById('photo').innerHTML='<div class="shirt">🏆</div><div class="loader">spéciale album</div>';}
-document.getElementById('close').onclick=()=>document.getElementById('modal').classList.remove('open');document.getElementById('modal').onclick=e=>{if(e.target.id==='modal')document.getElementById('modal').classList.remove('open')};document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('modal').classList.remove('open')});document.getElementById('toggleFound').onclick=()=>{if(!current)return;let id=sid(current.team,current.num);found.has(id)?found.delete(id):found.add(id);save();render();openModal(current)};document.getElementById('copy').onclick=()=>{if(current)navigator.clipboard.writeText(`${current.team.code} ${current.num} - ${current.name}`)};document.getElementById('q').addEventListener('input',render);document.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));b.classList.add('active');filter=b.dataset.filter;render()});render();
+async function wikiImage(name){try{let url=`https://en.wikipedia.org/w/api.php?action=query&origin=*&generator=search&gsrsearch=${encodeURIComponent(name)}&gsrlimit=1&prop=pageimages&piprop=thumbnail&pithumbsize=900`;let r=await fetch(url);let j=await r.json();let p=j.query&&j.query.pages&&Object.values(j.query.pages)[0];return p&&p.thumbnail&&p.thumbnail.source}catch(e){return null}}
+async function loadWiki(name,containerId,withLoader=true){let c=document.getElementById(containerId);if(!c)return;let img=await wikiImage(name);let loader=document.getElementById('loader');if(img){c.innerHTML=`<img src="${img}" alt="${name}">`}else if(loader&&withLoader){loader.textContent='image non trouvée'}}
+document.getElementById('q')?.addEventListener('input',render);
+document.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));b.classList.add('active');filter=b.dataset.filter;render()});
+updateStats();
 </script>
 
 <script>
@@ -232,6 +205,7 @@ const OWNER_TABLE = "Owner";
 const COUNTRY_TABLE = "Pays";
 const DEFAULT_OWNER_NAME = "Maé, Robin et Lenny";
 const HIGHLIGHT_IMAGES = [
+  "assets/MaéRobin0.png",
   "assets/MaéRobin1.jpeg",
   "assets/MaéRobin2.jpeg",
   "assets/MaéRobin3.jpeg",
@@ -328,9 +302,9 @@ async function loadRefs(){
     owners = [{owner_id:1, nom:DEFAULT_OWNER_NAME, mot_de_passe:null}];
   }
 
-  // Fallback Pays à partir de l'ancien index si la table Pays n'est pas encore lisible.
+  // Pas de fallback local: les pays doivent venir de la table Pays.
   if(!countries.length){
-    countries = teams.map((t,i)=>({country_id:i+1, nom:t.n, initiale_panini:t.code}));
+    countries = [];
   }
 
   let selected = owners.find(o=>Number(o.owner_id)===currentOwnerId) || owners.find(o=>o.nom===currentOwnerName) || owners.find(o=>o.nom===DEFAULT_OWNER_NAME) || owners[0];
@@ -387,9 +361,24 @@ async function loadCloud(){
 
 
 function cloudRowsForTab(){
-  if(cloudTab==='missing') return cloudRows.filter(r=>normQty(r.quantity_missing)>0).map(r=>({...r,_viewQty:normQty(r.quantity_missing),_viewType:'missing'}));
-  if(cloudTab==='double') return cloudRows.filter(r=>normQty(r.quantity_double)>0).map(r=>({...r,_viewQty:normQty(r.quantity_double),_viewType:'double'}));
-  return cloudRows.filter(r=>normQty(r.quantity_missing)>0||normQty(r.quantity_double)>0).map(r=>({...r,_viewQty:normQty(r.quantity_missing)||normQty(r.quantity_double),_viewType:normQty(r.quantity_missing)>0?'missing':'double'}));
+  const q=(document.getElementById('q')?.value||'').toLowerCase().trim();
+  const enrich=r=>{
+    const c=countryById(r.country_id);
+    const text=[c?.nom,c?.initiale_panini,r.sticker_number,r.sticker_name,r.note].join(' ').toLowerCase();
+    return !q || text.includes(q);
+  };
+  const applyChip=r=>{
+    const special=normQty(r.sticker_special)>0 || /team|logo|fifa|history/i.test(String(r.sticker_name||''));
+    if(filter==='players') return !special;
+    if(filter==='specials') return special;
+    if(filter==='stars') return normQty(r.sticker_special)>0;
+    if(filter==='todo') return normQty(r.quantity_missing)>0;
+    return true;
+  };
+  const base=cloudRows.filter(r=>enrich(r) && applyChip(r));
+  if(cloudTab==='missing') return base.filter(r=>normQty(r.quantity_missing)>0).map(r=>({...r,_viewQty:normQty(r.quantity_missing),_viewType:'missing'}));
+  if(cloudTab==='double') return base.filter(r=>normQty(r.quantity_double)>0).map(r=>({...r,_viewQty:normQty(r.quantity_double),_viewType:'double'}));
+  return base.filter(r=>normQty(r.quantity_missing)>0||normQty(r.quantity_double)>0).map(r=>({...r,_viewQty:normQty(r.quantity_missing)||normQty(r.quantity_double),_viewType:normQty(r.quantity_missing)>0?'missing':'double'}));
 }
 
 function renderCloudAlbum(rows,title){
@@ -400,8 +389,7 @@ function renderCloudAlbum(rows,title){
   return `<h2 class="section-title album-dynamic-title">${esc(title)}</h2><div class="grid cloud-album-grid">${codes.map(code=>{
     const rs=by[code].sort((a,b)=>normQty(a.sticker_number)-normQty(b.sticker_number));
     const c=countryById(rs[0].country_id);
-    const fromTeams=teams.find(t=>t.code===code);
-    const flagHtml=fromTeams&&fromTeams.flag?`<img class="flag" src="${flag(fromTeams)}" onerror="this.style.display='none'">`:'<span>🏆</span>';
+    const flagHtml=countryFlagHtml(code,'flag');
     const count=rs.reduce((a,r)=>a+normQty(r._viewQty||0),0);
     return `<article class="country"><div class="head">${flagHtml}<div class="name">${esc(c?.nom||code)}</div><div class="count">${count}</div></div><div class="stickers">${rs.map(r=>{const typ=r._viewType==='double'?'double-card':'missing-card';const qty=normQty(r._viewQty||0);return `<div class="sticker ${typ} ${normQty(r.sticker_special)>0?'foil dibu':''}" title="${esc(r.sticker_name||'')}"><div class="num">${esc(r.sticker_number)}${normQty(r.sticker_special)>0?'⭐':''}</div><div class="mini">${esc(r.sticker_name||'')}${qty>1?' ×'+qty:''}</div></div>`}).join('')}</div></article>`
   }).join('')}</div>`;
@@ -435,18 +423,17 @@ function renderCloudTable(rows,type){
 }
 
 function cardFlagHtml(code){
-  const c = countries.find(x=>x.initiale_panini===code);
-  const fromTeams = teams.find(t=>t.code===code);
-  if(fromTeams && fromTeams.flag){return `<img class="card-flag" src="${flag(fromTeams)}" alt="${esc(code)}">`}
-  return `<div class="card-flag" style="display:grid;place-items:center;font-size:12px;font-weight:1000;color:#10194e">${esc(code)}</div>`
+  return countryFlagHtml(code,'card-flag');
 }
 
 function specialImageHtml(row, code){
-  const first = HIGHLIGHT_IMAGES[0] || '';
-  const label = `${code} ${row.sticker_number || ''}`.trim();
-  return `<img id="spotCarouselImg" src="${esc(first)}" alt="Photos Maé Robin Lenny" onerror="this.style.display='none'">
+  const imageSrc = String(row.image_url || row.photo_url || row.img_url || row.picture_url || row.image || '').trim();
+  if(imageSrc){
+    return `<img src="${esc(imageSrc)}" alt="${esc(row.sticker_name || code)}" onerror="this.parentElement.innerHTML='<div class=&quot;shirt&quot;>⭐</div>'">`;
+  }
+  return `<div class="shirt" style="font-size:76px;line-height:1">⭐</div>
           <div style="position:absolute;left:18px;right:18px;bottom:18px;background:rgba(16,25,78,.88);color:#fff;border-radius:18px;padding:12px 10px;text-align:center;font-weight:1000;letter-spacing:.06em">
-            ${esc(label)}
+            ${esc(code)} ${esc(row.sticker_number || '')}
           </div>`;
 }
 
@@ -520,7 +507,6 @@ function renderSupabaseSpotlight(){
     render();
     document.getElementById('cloudPanel')?.scrollIntoView({behavior:'smooth',block:'start'});
   });
-  startSpotCarousel();
 }
 
 function renderShowcaseFallback(){
@@ -532,7 +518,7 @@ function renderShowcaseFallback(){
     <div class="legend-inner">
       <div class="card-flag" style="display:grid;place-items:center;font-size:12px;font-weight:1000;color:#10194e">★</div>
       <span class="card-rank">Special</span>
-      <div class="legend-photo"><img id="spotCarouselImg" src="${esc(HIGHLIGHT_IMAGES[0] || '')}" alt="Photos Maé Robin Lenny"></div>
+      <div class="legend-photo"><div class="shirt">⭐</div></div>
       <div class="legend-name">Highlight</div>
       <div class="legend-meta">${esc(currentOwnerName || DEFAULT_OWNER_NAME)}</div>
     </div>
@@ -542,7 +528,6 @@ function renderShowcaseFallback(){
     <h2>Aucun highlight choisi</h2>
     <p class="spot-note">Coche une ligne avec sticker_special = 1 dans la table Panini pour ce compte.</p>
   </div>`;
-  startSpotCarousel();
 }
 
 function startSpotCarousel(){
@@ -550,16 +535,10 @@ function startSpotCarousel(){
   const img=document.getElementById('spotCarouselImg');
   if(!img || !HIGHLIGHT_IMAGES.length)return;
   let i=0;
-  img.src=HIGHLIGHT_IMAGES[i];
-  img.style.display='block';
-  img.onerror=()=>{
-    i=(i+1)%HIGHLIGHT_IMAGES.length;
-    img.src=HIGHLIGHT_IMAGES[i];
-  };
   carouselTimer=setInterval(()=>{
     i=(i+1)%HIGHLIGHT_IMAGES.length;
     img.src=HIGHLIGHT_IMAGES[i];
-  },2400);
+  },2600);
 }
 
 function ownerNameById(id){
