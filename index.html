@@ -98,6 +98,23 @@
 .sticker.double-card .num{color:#166534}.sticker.missing-card .num{color:#111827}
 .sticker.double-card.dibu,.sticker.missing-card.dibu{box-shadow:0 0 0 2px var(--gold),0 14px 30px rgba(255,210,63,.36)}
 
+
+/* --- v16h08 fix: modal, reference, carousel --- */
+.panel{position:relative}
+.close{position:absolute;right:14px;top:14px;z-index:10;background:#fff;color:#111;border-radius:99px;width:46px;height:46px;padding:0;box-shadow:0 8px 28px rgba(0,0,0,.22)}
+.modal{align-items:center;overflow-y:auto}
+.modal.open{display:grid}
+.sticker{pointer-events:auto}
+.sticker .mini{min-height:22px}
+.spot-carousel.family-carousel{display:block!important;margin-top:18px;width:min(360px,100%);height:210px;transform:none;padding:0;border-radius:24px;background:rgba(255,255,255,.14);box-shadow:0 22px 50px rgba(0,0,0,.24);overflow:hidden;border:1px solid rgba(255,255,255,.28)}
+.spot-carousel.family-carousel:before,.spot-carousel.family-carousel:after{display:none!important}
+.spot-carousel.family-carousel img{border-radius:24px;width:100%;height:100%;object-fit:cover}
+@media(max-width:560px){
+  .modal{align-items:flex-start;padding:22px 10px}
+  .panel{margin-top:20px}
+  .close{right:10px;top:10px}
+}
+
 </style>
 </head>
 <body>
@@ -159,7 +176,7 @@
 
   <div class="footer">Données checklist issues de PaniniReference, affichage privé de collectionneur. Les images joueurs sont chargées automatiquement depuis Wikipédia quand disponibles, sinon une carte stylisée est affichée. Photo DIBU: Wikimedia Commons.</div>
 </div>
-<div class="modal" id="modal"><button class="close" id="close">×</button><div class="panel"><div class="player-img" id="photo"><div class="shirt">⚽</div><div class="loader" id="loader">recherche image...</div></div><div class="details"><span class="badge" id="badge"></span><h2 id="mName"></h2><p id="mSub"></p><div class="info"><div class="box"><small>Vignette</small><b id="mSticker"></b></div><div class="box"><small>Type</small><b id="mType"></b></div><div class="box"><small>Club</small><b id="mClub"></b></div><div class="box"><small>Source</small><b>Scanini / Wiki</b></div></div><div class="actions"><button class="primary" id="toggleFound">Marquer trouvée</button><a class="ghost" id="scanini" target="_blank" rel="noopener" style="text-decoration:none;padding:14px 18px;border-radius:18px;font-weight:900">Ouvrir Scanini</a><button class="ghost" id="copy">Copier code</button></div></div></div></div>
+<div class="modal" id="modal"><div class="panel"><button class="close" id="close">×</button><div class="player-img" id="photo"><div class="shirt">⚽</div><div class="loader" id="loader">recherche image...</div></div><div class="details"><span class="badge" id="badge"></span><h2 id="mName"></h2><p id="mSub"></p><div class="info"><div class="box"><small>Vignette</small><b id="mSticker"></b></div><div class="box"><small>Type</small><b id="mType"></b></div><div class="box"><small>Club</small><b id="mClub"></b></div><div class="box"><small>Source</small><b>PaniniReference</b></div></div><div class="actions"><button class="primary" id="toggleFound">Marquer trouvée</button><a class="ghost" id="scanini" target="_blank" rel="noopener" style="text-decoration:none;padding:14px 18px;border-radius:18px;font-weight:900">Ouvrir Scanini</a><button class="ghost" id="copy">Copier code</button></div></div></div></div>
 <script>
 const ALBUM_SIZE=980;
 // v2: plus aucune donnée joueur/pays en dur dans l'index.
@@ -243,16 +260,25 @@ function enrichPaniniRow(row){
   const ref = refById(row.reference_id) || refByCountryNumber(row.country_id,row.sticker_number);
   return {...row,_ref:ref||null};
 }
-function stickerName(row){return row?._ref?.sticker_name || row?.sticker_name || 'Nom non renseigné'}
-function stickerPhoto(row){return row?._ref?.photo_url || row?.photo_url || row?.image_url || row?.img_url || row?.picture_url || row?.image || ''}
+function stickerName(row){return row?._ref?.sticker_name || row?.sticker_name || row?.name || row?.title || 'Nom non renseigné'}
 function stickerCode(row){return row?._ref?.sticker_code || `${countryCode(row?.country_id)}${row?.sticker_number||''}`}
+function generatedPaniniPhoto(row){
+  const code = countryCode(row?.country_id);
+  const n = Number(row?.sticker_number||0);
+  if(!code || code==='?' || !n)return '';
+  return `https://pub-24930f19e0c3402fa466727b45e82627.r2.dev/sticker-catalog/panini2026-by-code/${code}${String(n).padStart(2,'0')}.webp`;
+}
+function stickerPhoto(row){return row?._ref?.photo_url || row?.photo_url || row?.image_url || row?.img_url || row?.picture_url || row?.image || generatedPaniniPhoto(row)}
 function stickerType(row){return row?._ref?.sticker_type || row?.sticker_type || ''}
 function stickerSection(row){return row?._ref?.section || countryById(row?.country_id)?.nom || ''}
 async function loadReferenceCache(){
   if(referenceRows.length)return;
-  const rr = await api(`${REFERENCE_TABLE}?select=*&order=initiale_panini.asc&order=sticker_number.asc`);
+  const rr = await api(`${REFERENCE_TABLE}?select=id,country_id,initiale_panini,sticker_number,sticker_number_raw,sticker_code,sticker_name,section,sticker_type,photo_url,club&order=initiale_panini.asc&order=sticker_number.asc&limit=2000`);
   if(!rr.ok)throw new Error(await rr.text());
   referenceRows = await rr.json();
+  if(!referenceRows.length){
+    console.warn('PaniniReference est vide ou bloqué par RLS: les noms/photos ne pourront pas être affichés.');
+  }
 }
 function saveOwnerChoice(){localStorage.setItem('akada-panini-owner-id',String(currentOwnerId||''));localStorage.setItem('akada-panini-owner-name',currentOwnerName||'')}
 
@@ -514,7 +540,10 @@ function renderSupabaseSpotlight(){
     <h2>${esc(parsed.headline)}</h2>
     <p class="spot-note">${esc(parsed.description)}</p>
     <button class="primary" id="spotlightSearchBtn">Voir dans le carnet</button>
+    <div class="spot-carousel family-carousel"><img id="spotCarouselImg" src="${esc(HIGHLIGHT_IMAGES[0] || '')}" alt="Maé Robin Lenny"></div>
   </div>`;
+
+  startSpotCarousel();
 
   document.getElementById('spotlightSearchBtn')?.addEventListener('click',()=>{
     const q = document.getElementById('q');
@@ -546,7 +575,9 @@ function renderShowcaseFallback(){
     <div class="spot-kicker">Carte préférée</div>
     <h2>Aucun highlight choisi</h2>
     <p class="spot-note">Coche une ligne avec sticker_special = 1 dans la table Panini pour ce compte.</p>
+    <div class="spot-carousel family-carousel"><img id="spotCarouselImg" src="${esc(HIGHLIGHT_IMAGES[0] || '')}" alt="Maé Robin Lenny"></div>
   </div>`;
+  startSpotCarousel();
 }
 
 function startSpotCarousel(){
