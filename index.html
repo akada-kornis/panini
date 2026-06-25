@@ -98,14 +98,27 @@
 .sticker.double-card .num{color:#166534}.sticker.missing-card .num{color:#111827}
 .sticker.double-card.dibu,.sticker.missing-card.dibu{box-shadow:0 0 0 2px var(--gold),0 14px 30px rgba(255,210,63,.36)}
 
-/* --- v17h40: carte préférée + manque = jaune complet, pas seulement contour --- */
-.sticker.missing-card.dibu{
+/* --- v18: états highlight plus fins ---
+   - manque normal: blanc
+   - manque + highlight: blanc avec pourtour doré
+   - trouvée + highlight: carte dorée complète
+*/
+.sticker.highlight-missing{
+  background:linear-gradient(#fff,#eef2f7)!important;
+  box-shadow:inset 0 0 0 2px rgba(255,210,63,.95),0 14px 30px rgba(255,210,63,.36)!important;
+}
+.sticker.highlight-found{
   background:linear-gradient(135deg,#fff8bf 0%,#ffd23f 52%,#ffe999 100%)!important;
   box-shadow:inset 0 0 0 1px rgba(216,155,0,.42),0 14px 30px rgba(255,210,63,.42)!important;
 }
-.sticker.missing-card.dibu .num,
-.sticker.missing-card.dibu .mini{
+.sticker.highlight-found .num,
+.sticker.highlight-found .mini,
+.sticker.highlight-missing .num,
+.sticker.highlight-missing .mini{
   color:#10194e!important;
+}
+.sticker.highlight-found:after{
+  content:'FAVORI';position:absolute;right:6px;top:6px;background:#10194e;color:#fff;border-radius:999px;padding:3px 5px;font-size:7px;font-weight:1000;letter-spacing:.04em;
 }
 
 
@@ -363,6 +376,17 @@
 .app-dialog-secondary{background:#f1f5f9;color:#111827}
 @media(max-width:560px){.app-dialog{align-items:flex-end;padding:12px}.app-dialog-card{border-radius:24px}.app-dialog-actions button{flex:1}}
 
+/* --- v19: gestion +/- manques et doubles dans la carte ouverte --- */
+.qty-editor{display:grid;gap:10px;margin:16px 0 18px}
+.qty-line{display:flex;align-items:center;justify-content:space-between;gap:14px;border:1px solid #e5e7eb;background:#f8fafc;border-radius:18px;padding:13px 14px}
+.qty-line b{display:block;font-size:15px;color:#111827}
+.qty-line small{display:block;margin-top:3px;color:#64748b;font-weight:800}
+.qty-buttons{display:inline-flex;align-items:center;gap:8px;flex-shrink:0}
+.qty-btn{width:38px;height:38px;border-radius:14px;padding:0;background:#10194e;color:#fff;font-size:20px;line-height:1}
+.qty-btn:disabled{opacity:.45;cursor:not-allowed}
+.qty-value{min-width:34px;text-align:center;font-size:22px;font-weight:1000;color:#10194e}
+@media(max-width:560px){.qty-line{align-items:flex-start;flex-direction:column}.qty-buttons{width:100%;justify-content:space-between}.qty-btn{width:44px;height:40px}}
+
 </style>
 </head>
 <body>
@@ -424,7 +448,10 @@
 
   <div class="footer">Données checklist issues de PaniniReference, affichage privé de collectionneur. Les images joueurs sont chargées automatiquement depuis Wikipédia quand disponibles, sinon une carte stylisée est affichée. Photo DIBU: Wikimedia Commons.</div>
 </div>
-<div class="modal" id="modal"><div class="panel"><button class="close" id="close">×</button><div class="player-img" id="photo"><div class="shirt">⚽</div><div class="loader" id="loader">recherche image...</div></div><div class="details"><span class="badge" id="badge"></span><h2 id="mName"></h2><p id="mSub"></p><div class="info"><div class="box"><small>Vignette</small><b id="mSticker"></b></div><div class="box"><small>Type</small><b id="mType"></b></div><div class="box"><small>Club</small><b id="mClub"></b></div><div class="box"><small>Source</small><b>PaniniReference</b></div></div><div class="highlight-editor"><label for="mHighlightNote">Note carte préférée</label><textarea id="mHighlightNote" placeholder="Exemple: Boss final || DIBU La chasse a son boss final."></textarea><small>Astuce: écris <b>Titre || texte</b> pour avoir un grand titre et une phrase dans le cadre.</small></div><div class="actions"><button class="primary" id="toggleFound">Marquer trouvée</button><button class="ghost" id="setHighlightBtn">⭐ Mettre en carte préférée</button></div></div></div></div>
+<div class="modal" id="modal"><div class="panel"><button class="close" id="close">×</button><div class="player-img" id="photo"><div class="shirt">⚽</div><div class="loader" id="loader">recherche image...</div></div><div class="details"><span class="badge" id="badge"></span><h2 id="mName"></h2><p id="mSub"></p><div class="info"><div class="box"><small>Vignette</small><b id="mSticker"></b></div><div class="box"><small>Type</small><b id="mType"></b></div><div class="box"><small>Club</small><b id="mClub"></b></div><div class="box"><small>Source</small><b>PaniniReference</b></div></div><div class="highlight-editor"><label for="mHighlightNote">Note carte préférée</label><textarea id="mHighlightNote" placeholder="Exemple: Boss final || DIBU La chasse a son boss final."></textarea><small>Astuce: écris <b>Titre || texte</b> pour avoir un grand titre et une phrase dans le cadre.</small></div><div class="qty-editor">
+  <div class="qty-line"><div><b>Manques</b><small>Ce qu'il reste à trouver</small></div><div class="qty-buttons"><button class="qty-btn" id="missingMinus" type="button">−</button><span class="qty-value" id="missingQtyValue">0</span><button class="qty-btn" id="missingPlus" type="button">+</button></div></div>
+  <div class="qty-line"><div><b>Doubles</b><small>Exemplaires à échanger / donner</small></div><div class="qty-buttons"><button class="qty-btn" id="doubleMinus" type="button">−</button><span class="qty-value" id="doubleQtyValue">0</span><button class="qty-btn" id="doublePlus" type="button">+</button></div></div>
+</div><div class="actions"><button class="ghost" id="setHighlightBtn">⭐ Mettre en carte préférée</button></div></div></div></div>
 
 <div class="app-dialog" id="appDialog" aria-hidden="true">
   <div class="app-dialog-card" role="dialog" aria-modal="true" aria-labelledby="appDialogTitle">
@@ -786,7 +813,15 @@ function cloudRowsForTab(){
   const base=cloudRows.filter(r=>enrich(r) && applyChip(r));
   if(cloudTab==='missing') return base.filter(r=>normQty(r.quantity_missing)>0).map(r=>({...r,_viewQty:normQty(r.quantity_missing),_viewType:'missing'}));
   if(cloudTab==='double') return base.filter(r=>normQty(r.quantity_double)>0).map(r=>({...r,_viewQty:normQty(r.quantity_double),_viewType:'double'}));
-  return base.filter(r=>normQty(r.quantity_missing)>0||normQty(r.quantity_double)>0).map(r=>({...r,_viewQty:normQty(r.quantity_missing)||normQty(r.quantity_double),_viewType:normQty(r.quantity_missing)>0?'missing':'double'}));
+  return base
+    .filter(r=>normQty(r.quantity_missing)>0 || normQty(r.quantity_double)>0 || normQty(r.sticker_special)>0)
+    .map(r=>{
+      const isHighlight = normQty(r.sticker_special)>0;
+      const missingQty = normQty(r.quantity_missing);
+      const doubleQty = normQty(r.quantity_double);
+      const viewType = missingQty>0 ? 'missing' : (doubleQty>0 ? 'double' : (isHighlight ? 'highlight-found' : 'double'));
+      return {...r,_viewQty:missingQty || doubleQty || 1,_viewType:viewType};
+    });
 }
 
 function renderCloudAlbum(rows,title){
@@ -799,7 +834,13 @@ function renderCloudAlbum(rows,title){
     const c=countryById(rs[0].country_id);
     const flagHtml=countryFlagHtml(code,'flag');
     const count=rs.reduce((a,r)=>a+normQty(r._viewQty||0),0);
-    return `<article class="country"><div class="head">${flagHtml}<div class="name">${esc(c?.nom||code)}</div><div class="count">${count}</div></div><div class="stickers">${rs.map(r=>{const typ=r._viewType==='double'?'double-card':'missing-card';const qty=normQty(r._viewQty||0);return `<div class="sticker ${typ} ${normQty(r.sticker_special)>0?'foil dibu':''}" title="${esc(stickerName(r))}" onclick="openCloudCard(${Number(r.id)})"><div class="num">${esc(r.sticker_number)}${normQty(r.sticker_special)>0?'⭐':''}</div><div class="mini">${esc(stickerName(r))}${qty>1?' ×'+qty:''}</div></div>`}).join('')}</div></article>`
+    return `<article class="country"><div class="head">${flagHtml}<div class="name">${esc(c?.nom||code)}</div><div class="count">${count}</div></div><div class="stickers">${rs.map(r=>{
+      const isHighlight=normQty(r.sticker_special)>0;
+      const typ=r._viewType==='double'?'double-card':'missing-card';
+      const highlightState=isHighlight ? (normQty(r.quantity_missing)>0 ? 'highlight-missing' : 'highlight-found') : '';
+      const qty=normQty(r._viewQty||0);
+      return `<div class="sticker ${typ} ${highlightState}" title="${esc(stickerName(r))}" onclick="openCloudCard(${Number(r.id)})"><div class="num">${esc(r.sticker_number)}${isHighlight?'⭐':''}</div><div class="mini">${esc(stickerName(r))}${qty>1?' ×'+qty:''}</div></div>`
+    }).join('')}</div></article>`
   }).join('')}</div>`;
 }
 
@@ -811,7 +852,7 @@ function renderTechnicalList(rows,type){
 function renderCloud(){
   const el=document.getElementById('cloudContent');if(!el)return;
   const missing=cloudRows.filter(r=>normQty(r.quantity_missing)>0), doubles=cloudRows.filter(r=>normQty(r.quantity_double)>0);
-  const countrySet=new Set(cloudRows.filter(r=>normQty(r.quantity_missing)>0||normQty(r.quantity_double)>0).map(r=>r.country_id||'x'));
+  const countrySet=new Set(cloudRows.filter(r=>normQty(r.quantity_missing)>0||normQty(r.quantity_double)>0||normQty(r.sticker_special)>0).map(r=>r.country_id||'x'));
   document.getElementById('cloudMissingTotal').textContent=missing.reduce((a,r)=>a+normQty(r.quantity_missing),0);
   document.getElementById('cloudDoubleTotal').textContent=doubles.reduce((a,r)=>a+normQty(r.quantity_double),0);
   document.getElementById('cloudCountryTotal').textContent=countrySet.size;
@@ -820,7 +861,7 @@ function renderCloud(){
   if(!rows.length){el.innerHTML=`<div class="cloud-empty">Aucune vignette pour ${esc(currentOwnerName)}.</div>`;return}
   const title = cloudTab==='double' ? 'Album des doubles' : (cloudTab==='graph' ? 'Album par pays' : 'Album des manquants');
   const album = renderCloudAlbum(rows,title);
-  const listRows = cloudTab==='missing' ? missing : (cloudTab==='double' ? doubles : cloudRows.filter(r=>normQty(r.quantity_missing)>0||normQty(r.quantity_double)>0));
+  const listRows = cloudTab==='missing' ? missing : (cloudTab==='double' ? doubles : cloudRows.filter(r=>normQty(r.quantity_missing)>0||normQty(r.quantity_double)>0||normQty(r.sticker_special)>0));
   const list = renderTechnicalList(listRows,cloudTab);
   el.innerHTML=`${album}<details class="cloud-list-details"><summary>Liste technique / suppression</summary><div class="cloud-list-body">${list}</div></details>`;
 }
@@ -1018,53 +1059,75 @@ function openCloudCard(id){
   const highlightBtn=document.getElementById('setHighlightBtn');
   if(highlightBtn){
     const isOn = normQty(row.sticker_special)>0;
-    highlightBtn.textContent = isOn ? '⭐ Carte préférée enregistrée' : '⭐ Mettre en carte préférée';
+    highlightBtn.textContent = isOn ? '⭐ Retirer des cartes préférées' : '⭐ Mettre en carte préférée';
     highlightBtn.classList.toggle('is-on', isOn);
-    highlightBtn.onclick=()=>saveCurrentHighlight();
+    highlightBtn.onclick=()=>toggleCurrentHighlight();
   }
-  const toggle=document.getElementById('toggleFound');
-  if(toggle){toggle.textContent = normQty(row.quantity_missing)>0 ? 'Marquer trouvée' : 'OK'; toggle.onclick=()=>markCurrentFound();}
+  refreshQtyControls();
+  document.getElementById('missingMinus')?.addEventListener('click',()=>changeCurrentQty('missing',-1));
+  document.getElementById('missingPlus')?.addEventListener('click',()=>changeCurrentQty('missing',1));
+  document.getElementById('doubleMinus')?.addEventListener('click',()=>changeCurrentQty('double',-1));
+  document.getElementById('doublePlus')?.addEventListener('click',()=>changeCurrentQty('double',1));
   document.getElementById('modal')?.classList.add('open');
 }
 
-async function markCurrentFound(){
-  if(!current || !current.id)return;
+function refreshQtyControls(){
+  if(!current)return;
   const missing=normQty(current.quantity_missing);
-  const btn=document.getElementById('toggleFound');
-  if(missing<=0){closeModal();return;}
-  const nextMissing=Math.max(0,missing-1);
-  if(btn){btn.disabled=true;btn.textContent=nextMissing>0 ? 'Mise à jour...' : 'Trouvée !'}
+  const doubleQty=normQty(current.quantity_double);
+  const mVal=document.getElementById('missingQtyValue');
+  const dVal=document.getElementById('doubleQtyValue');
+  if(mVal)mVal.textContent=String(missing);
+  if(dVal)dVal.textContent=String(doubleQty);
+  const mMinus=document.getElementById('missingMinus');
+  const dMinus=document.getElementById('doubleMinus');
+  if(mMinus)mMinus.disabled=missing<=0;
+  if(dMinus)dMinus.disabled=doubleQty<=0;
+}
+
+async function changeCurrentQty(kind,delta){
+  if(!current || !current.id)return;
+  const field = kind==='double' ? 'quantity_double' : 'quantity_missing';
+  const currentQty=normQty(current[field]);
+  const nextQty=Math.max(0,currentQty+delta);
+  if(nextQty===currentQty)return;
+  const buttons=['missingMinus','missingPlus','doubleMinus','doublePlus'].map(id=>document.getElementById(id)).filter(Boolean);
+  buttons.forEach(b=>b.disabled=true);
   try{
-    const r=await api(`${SUPABASE_TABLE}?id=eq.${Number(current.id)}`,{
-      method:'PATCH',
-      body:JSON.stringify({quantity_missing:nextMissing})
-    });
+    const payload={ [field]: nextQty };
+    const r=await api(`${SUPABASE_TABLE}?id=eq.${Number(current.id)}`,{method:'PATCH',body:JSON.stringify(payload)});
     if(!r.ok)throw new Error(await r.text());
-    current.quantity_missing=nextMissing;
-    closeModal();
-    await loadCloud();
+    current[field]=nextQty;
+    const idx=cloudRows.findIndex(r=>Number(r.id)===Number(current.id));
+    if(idx>=0)cloudRows[idx][field]=nextQty;
+    refreshQtyControls();
+    renderCloud();
+    updateStats();
+    renderSupabaseSpotlight();
   }catch(e){
     await showAppMessage('Erreur Supabase',String(e.message||e).slice(0,500));
+    refreshQtyControls();
   }finally{
-    if(btn){btn.disabled=false;btn.textContent='Marquer trouvée'}
+    refreshQtyControls();
   }
 }
 
-async function saveCurrentHighlight(){
+async function toggleCurrentHighlight(){
   if(!current || !current.id)return;
   const btn=document.getElementById('setHighlightBtn');
   const note=(document.getElementById('mHighlightNote')?.value || '').trim();
-  const payload={sticker_special:1, note};
-  if(btn){btn.disabled=true;btn.textContent='Enregistrement...'}
+  const isOn=normQty(current.sticker_special)>0;
+  const payload=isOn ? {sticker_special:0, note} : {sticker_special:1, note};
+  if(btn){btn.disabled=true;btn.textContent=isOn ? 'Retrait...' : 'Enregistrement...'}
   try{
     const r=await api(`${SUPABASE_TABLE}?id=eq.${Number(current.id)}`,{method:'PATCH',body:JSON.stringify(payload)});
     if(!r.ok)throw new Error(await r.text());
-    current.sticker_special=1;
+    current.sticker_special=isOn ? 0 : 1;
     current.note=note;
     closeModal();
     await loadCloud();
   }catch(e){
-    alert('Erreur Supabase: '+String(e.message||e).slice(0,500)+'\n\nSi le message parle de panini_one_special_per_owner, il faut supprimer cette contrainte dans Supabase pour autoriser plusieurs cartes préférées.');
+    await showAppMessage('Erreur Supabase',String(e.message||e).slice(0,500)+'\n\nSi le message parle de panini_one_special_per_owner, il faut supprimer cette contrainte dans Supabase pour autoriser plusieurs cartes préférées.');
   }finally{
     if(btn){btn.disabled=false;btn.textContent='⭐ Mettre en carte préférée'}
   }
@@ -1128,7 +1191,7 @@ async function saveCloudItem(){
   const qty=Math.max(1,Number(document.getElementById('cloudQty').value||1));
   const note=document.getElementById('cloudNote').value.trim();
   const sticker_special=document.getElementById('cloudSpecial').checked ? 1 : 0;
-  if(!country_id||!sticker_number){alert('Il faut au minimum le pays et le numéro.');return}
+  if(!country_id||!sticker_number){await showAppMessage('Information manquante','Il faut au minimum le pays et le numéro.');return}
   try{await loadReferenceCache()}catch(e){}
   const ref = refByCountryNumber(country_id,sticker_number);
   const existing = cloudRows.find(r=>Number(r.owner_id)===Number(currentOwnerId) && Number(r.country_id)===country_id && Number(r.sticker_number)===sticker_number);
@@ -1164,7 +1227,7 @@ async function saveCloudItem(){
     document.getElementById('cloudQty').value=1;
     document.getElementById('cloudSpecial').checked=false;
     closeCloudForm();await loadCloud();
-  }catch(e){alert('Erreur Supabase: '+String(e.message||e).slice(0,500))}
+  }catch(e){await showAppMessage('Erreur Supabase',String(e.message||e).slice(0,500))}
   finally{btn.disabled=false;btn.textContent='Enregistrer'}
 }
 async function deleteCloudItem(id){if(!confirm('Supprimer cette ligne ?'))return;try{const r=await api(`${SUPABASE_TABLE}?id=eq.${id}`,{method:'DELETE'});if(!r.ok)throw new Error(await r.text());await loadCloud()}catch(e){alert('Erreur suppression: '+String(e.message||e).slice(0,250))}}
