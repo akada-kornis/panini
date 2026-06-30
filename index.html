@@ -402,6 +402,15 @@
 .modal.is-readonly .qty-editor,.modal.is-readonly .highlight-editor,.modal.is-readonly .actions{display:none!important}
 @media(max-width:560px){.viewer-zone{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}.view-tab{white-space:nowrap}}
 
+/* --- v29: liens directs + QR par album --- */
+.share-zone{margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.share-btn{padding:9px 12px;border-radius:999px;background:linear-gradient(135deg,#fff7c7,#ffd23f);color:#10194e;border:1px solid rgba(255,255,255,.45);font-weight:1000;font-size:13px}
+.share-link-mini{font-size:12px;opacity:.78;word-break:break-all}
+.qr-card{display:grid;gap:14px;text-align:center}
+.qr-card img{width:230px;height:230px;margin:auto;border-radius:20px;background:#fff;padding:12px;box-shadow:0 14px 32px rgba(0,0,0,.18)}
+.qr-url{border:1px solid #e5e7eb;background:#f8fafc;border-radius:16px;padding:12px;color:#111827;font-size:13px;word-break:break-all;text-align:left}
+@media(max-width:560px){.share-zone{width:100%}.share-btn{flex:1}.qr-card img{width:210px;height:210px}}
+
 </style>
 </head>
 <body>
@@ -447,7 +456,7 @@
 
 
   <section class="cloud-panel" id="cloudPanel">
-    <div class="cloud-head"><div><h2 class="cloud-title">Détail de l'album partagé</h2><p class="cloud-sub">Compte actif: <b id="activeOwnerLabel">Maé, Robin et Lenny</b>. Album affiché: <b id="viewOwnerLabel">Maé, Robin et Lenny</b>.</p><div class="viewer-zone" id="viewerZone"></div><div class="readonly-banner" id="readonlyBanner">👀 Lecture seule: tu consultes un autre album. Aucun mot de passe nécessaire, aucune modification possible.</div></div><div class="cloud-actions"><button class="cloud-btn" id="newMissing">+ Nouveau manque</button><button class="cloud-btn alt" id="newDouble">+ Nouveau double</button></div></div>
+    <div class="cloud-head"><div><h2 class="cloud-title">Détail de l'album partagé</h2><p class="cloud-sub">Compte actif: <b id="activeOwnerLabel">Maé, Robin et Lenny</b>. Album affiché: <b id="viewOwnerLabel">Maé, Robin et Lenny</b>.</p><div class="viewer-zone" id="viewerZone"></div><div class="share-zone" id="shareZone"><button class="share-btn" id="shareAlbumBtn">📱 QR / lien de cet album</button><span class="share-link-mini" id="shareMini"></span></div><div class="readonly-banner" id="readonlyBanner">👀 Lecture seule: tu consultes un autre album. Aucun mot de passe nécessaire, aucune modification possible.</div></div><div class="cloud-actions"><button class="cloud-btn" id="newMissing">+ Nouveau manque</button><button class="cloud-btn alt" id="newDouble">+ Nouveau double</button></div></div>
     <div class="cloud-stats"><div class="cloud-stat"><b id="cloudMissingTotal">0</b><span>manques saisis</span></div><div class="cloud-stat"><b id="cloudDoubleTotal">0</b><span>doubles saisis</span></div><div class="cloud-stat"><b id="cloudCountryTotal">0</b><span>pays concernés</span></div></div>
     <div class="cloud-tabs"><button class="cloud-tab active" data-cloudtab="graph">Par pays</button><button class="cloud-tab" data-cloudtab="missing">Manques</button><button class="cloud-tab" data-cloudtab="double">Doubles</button></div>
     <div class="cloud-form" id="cloudForm"><h3 id="cloudFormTitle">Nouveau manque</h3><div class="cloud-grid-form"><select id="cloudCountry"><option value="">Pays / série...</option></select><select id="cloudNumber"><option value="">No + nom...</option></select><input id="cloudName" readonly placeholder="Nom affiché depuis PaniniReference" /><input id="cloudQty" type="number" min="1" value="1" placeholder="Qté" /><input id="cloudNote" placeholder="Note facultative / texte highlight" /><label class="cloud-check"><input id="cloudSpecial" type="checkbox" /> Highlight</label></div><div class="cloud-form-actions"><button class="cloud-save" id="saveCloudItem">Enregistrer</button><button class="cloud-cancel" id="cancelCloudItem">Annuler</button></div></div>
@@ -640,6 +649,68 @@ async function loadReferenceCache(){
 }
 function saveOwnerChoice(){localStorage.setItem('akada-panini-owner-id',String(currentOwnerId||''));localStorage.setItem('akada-panini-owner-name',currentOwnerName||'')}
 function saveViewChoice(){localStorage.setItem('akada-panini-view-owner-id',String(viewingOwnerId||''));localStorage.setItem('akada-panini-view-owner-name',viewingOwnerName||'')}
+function getRequestedViewOwnerId(){
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get('view') || params.get('album') || params.get('owner');
+  const id = Number(raw || 0);
+  return Number.isFinite(id) && id > 0 ? id : 0;
+}
+function albumShareUrl(ownerId){
+  const url = new URL(window.location.href);
+  url.searchParams.set('view', String(ownerId || viewingOwnerId || currentOwnerId));
+  // Un QR sert à consulter. On évite de transporter un ancien filtre ou une recherche.
+  ['owner','album','q','filter'].forEach(k=>url.searchParams.delete(k));
+  return url.toString();
+}
+function updateShareUi(){
+  const mini=document.getElementById('shareMini');
+  if(mini && viewingOwnerId) mini.textContent = `Lien direct: ?view=${viewingOwnerId}`;
+}
+async function copyTextSafe(txt){
+  try{
+    await navigator.clipboard.writeText(txt);
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+async function openShareAlbumDialog(ownerId=viewingOwnerId){
+  const owner=owners.find(o=>Number(o.owner_id)===Number(ownerId)) || {owner_id:ownerId, nom:viewingOwnerName || currentOwnerName || 'Album'};
+  const url=albumShareUrl(owner.owner_id);
+  const qr=`https://api.qrserver.com/v1/create-qr-code/?size=360x360&data=${encodeURIComponent(url)}`;
+  const dialog=document.getElementById('appDialog');
+  const titleEl=document.getElementById('appDialogTitle');
+  const textEl=document.getElementById('appDialogText');
+  const fieldsEl=document.getElementById('appDialogFields');
+  const errorEl=document.getElementById('appDialogError');
+  const okBtn=document.getElementById('appDialogOk');
+  const cancelBtn=document.getElementById('appDialogCancel');
+  const form=document.getElementById('appDialogForm');
+  if(!dialog || !fieldsEl)return;
+  titleEl.textContent='QR de l’album';
+  textEl.textContent=`Scanne ce QR pour ouvrir directement l’album de ${owner.nom} en lecture seule.`;
+  errorEl.textContent='';
+  errorEl.classList.remove('show');
+  fieldsEl.innerHTML=`<div class="qr-card"><img src="${esc(qr)}" alt="QR ${esc(owner.nom)}"><div class="qr-url">${esc(url)}</div></div>`;
+  okBtn.textContent='Copier le lien';
+  cancelBtn.textContent='Fermer';
+  dialog.classList.add('open');
+  dialog.setAttribute('aria-hidden','false');
+  const close=()=>{
+    form.onsubmit=null; cancelBtn.onclick=null; dialog.onclick=null; document.removeEventListener('keydown',onKey);
+    dialog.classList.remove('open'); dialog.setAttribute('aria-hidden','true');
+  };
+  const onKey=(e)=>{if(e.key==='Escape')close()};
+  document.addEventListener('keydown',onKey);
+  cancelBtn.onclick=close;
+  dialog.onclick=(e)=>{if(e.target===dialog)close()};
+  form.onsubmit=async(e)=>{
+    e.preventDefault();
+    const ok=await copyTextSafe(url);
+    okBtn.textContent=ok ? 'Lien copié ✅' : 'Copie impossible';
+    setTimeout(()=>{okBtn.textContent='Copier le lien'},1400);
+  };
+}
 function isReadOnlyView(){return Number(viewingOwnerId||0)!==Number(currentOwnerId||0)}
 function setViewingOwner(o){
   if(!o)return;
@@ -729,9 +800,11 @@ async function loadRefs(){
 
   let selected = owners.find(o=>Number(o.owner_id)===currentOwnerId) || owners.find(o=>o.nom===currentOwnerName) || owners.find(o=>o.nom===DEFAULT_OWNER_NAME) || owners[0];
   if(selected){currentOwnerId=Number(selected.owner_id);currentOwnerName=selected.nom;saveOwnerChoice()}
-  let viewed = owners.find(o=>Number(o.owner_id)===viewingOwnerId) || owners.find(o=>o.nom===viewingOwnerName) || selected;
+  const requestedViewId = getRequestedViewOwnerId();
+  let viewed = (requestedViewId ? owners.find(o=>Number(o.owner_id)===requestedViewId) : null) || owners.find(o=>Number(o.owner_id)===viewingOwnerId) || owners.find(o=>o.nom===viewingOwnerName) || selected;
   if(viewed){viewingOwnerId=Number(viewed.owner_id);viewingOwnerName=viewed.nom;saveViewChoice()}
   renderOwnerTabs();
+  updateShareUi();
   renderCountrySelect();
 }
 
@@ -791,6 +864,7 @@ function renderOwnerTabs(){
   }
   const lab=document.getElementById('activeOwnerLabel');if(lab)lab.textContent=currentOwnerName;
   const vlab=document.getElementById('viewOwnerLabel');if(vlab)vlab.textContent=viewingOwnerName || currentOwnerName;
+  updateShareUi();
 }
 
 
@@ -827,6 +901,7 @@ async function loadCloud(){
   if(!viewingOwnerId){el.innerHTML='<div class="cloud-error">Aucun album trouvé dans la table Owner. Ajoute au moins: Maé, Robin et Lenny.</div>';renderShowcaseFallback();return}
   const lab=document.getElementById('activeOwnerLabel');if(lab)lab.textContent=currentOwnerName;
   const vlab=document.getElementById('viewOwnerLabel');if(vlab)vlab.textContent=viewingOwnerName || currentOwnerName;
+  updateShareUi();
   const panel=document.getElementById('cloudPanel'); if(panel)panel.classList.toggle('is-readonly', isReadOnlyView());
   const banner=document.getElementById('readonlyBanner'); if(banner)banner.classList.toggle('show', isReadOnlyView());
   el.innerHTML='<div class="cloud-empty">Chargement Supabase...</div>';
@@ -1289,6 +1364,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   document.getElementById('newMissing')?.addEventListener('click',()=>openCloudForm('missing'));
   document.getElementById('newDouble')?.addEventListener('click',()=>openCloudForm('double'));
   document.getElementById('tradeBtn')?.addEventListener('click',openTradePanel);
+  document.getElementById('shareAlbumBtn')?.addEventListener('click',()=>openShareAlbumDialog(viewingOwnerId));
   document.getElementById('tradeClose')?.addEventListener('click',()=>document.getElementById('tradePanel')?.classList.add('hidden'));
   document.getElementById('cancelCloudItem')?.addEventListener('click',closeCloudForm);
   document.getElementById('cloudCountry')?.addEventListener('change',updateStickerNumberOptions);
