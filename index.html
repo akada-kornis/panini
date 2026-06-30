@@ -387,6 +387,21 @@
 .qty-value{min-width:34px;text-align:center;font-size:22px;font-weight:1000;color:#10194e}
 @media(max-width:560px){.qty-line{align-items:flex-start;flex-direction:column}.qty-buttons{width:100%;justify-content:space-between}.qty-btn{width:44px;height:40px}}
 
+
+
+/* --- v28: consultation lecture seule d'un autre album --- */
+.viewer-zone{margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.viewer-label{font-size:12px;text-transform:uppercase;letter-spacing:.10em;font-weight:1000;opacity:.78;margin-right:4px}
+.view-tab{padding:9px 12px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);color:#fff;font-weight:1000;font-size:13px}
+.view-tab.active{background:linear-gradient(135deg,#dcfce7,#bbf7d0);color:#14532d}
+.readonly-banner{display:none;margin:10px 0 0;border-radius:16px;padding:11px 13px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.22);font-weight:900}
+.readonly-banner.show{display:block}
+.cloud-panel.is-readonly .cloud-actions,.cloud-panel.is-readonly .cloud-form{display:none!important}
+.cloud-panel.is-readonly .cloud-list-details summary{color:#e5e7eb}
+.cloud-panel.is-readonly .cloud-delete{display:none!important}
+.modal.is-readonly .qty-editor,.modal.is-readonly .highlight-editor,.modal.is-readonly .actions{display:none!important}
+@media(max-width:560px){.viewer-zone{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}.view-tab{white-space:nowrap}}
+
 </style>
 </head>
 <body>
@@ -432,7 +447,7 @@
 
 
   <section class="cloud-panel" id="cloudPanel">
-    <div class="cloud-head"><div><h2 class="cloud-title">Détail de l'album partagé</h2><p class="cloud-sub">Compte actif: <b id="activeOwnerLabel">Maé, Robin et Lenny</b>. Chaque compte possède ses propres manques et ses propres doubles.</p></div><div class="cloud-actions"><button class="cloud-btn" id="newMissing">+ Nouveau manque</button><button class="cloud-btn alt" id="newDouble">+ Nouveau double</button></div></div>
+    <div class="cloud-head"><div><h2 class="cloud-title">Détail de l'album partagé</h2><p class="cloud-sub">Compte actif: <b id="activeOwnerLabel">Maé, Robin et Lenny</b>. Album affiché: <b id="viewOwnerLabel">Maé, Robin et Lenny</b>.</p><div class="viewer-zone" id="viewerZone"></div><div class="readonly-banner" id="readonlyBanner">👀 Lecture seule: tu consultes un autre album. Aucun mot de passe nécessaire, aucune modification possible.</div></div><div class="cloud-actions"><button class="cloud-btn" id="newMissing">+ Nouveau manque</button><button class="cloud-btn alt" id="newDouble">+ Nouveau double</button></div></div>
     <div class="cloud-stats"><div class="cloud-stat"><b id="cloudMissingTotal">0</b><span>manques saisis</span></div><div class="cloud-stat"><b id="cloudDoubleTotal">0</b><span>doubles saisis</span></div><div class="cloud-stat"><b id="cloudCountryTotal">0</b><span>pays concernés</span></div></div>
     <div class="cloud-tabs"><button class="cloud-tab active" data-cloudtab="graph">Par pays</button><button class="cloud-tab" data-cloudtab="missing">Manques</button><button class="cloud-tab" data-cloudtab="double">Doubles</button></div>
     <div class="cloud-form" id="cloudForm"><h3 id="cloudFormTitle">Nouveau manque</h3><div class="cloud-grid-form"><select id="cloudCountry"><option value="">Pays / série...</option></select><select id="cloudNumber"><option value="">No + nom...</option></select><input id="cloudName" readonly placeholder="Nom affiché depuis PaniniReference" /><input id="cloudQty" type="number" min="1" value="1" placeholder="Qté" /><input id="cloudNote" placeholder="Note facultative / texte highlight" /><label class="cloud-check"><input id="cloudSpecial" type="checkbox" /> Highlight</label></div><div class="cloud-form-actions"><button class="cloud-save" id="saveCloudItem">Enregistrer</button><button class="cloud-cancel" id="cancelCloudItem">Annuler</button></div></div>
@@ -525,6 +540,8 @@ let cloudRows = [], cloudTab = "graph", cloudMode = "graph";
 let owners = [], countries = [], referenceRows = [];
 let currentOwnerId = Number(localStorage.getItem('akada-panini-owner-id') || 0);
 let currentOwnerName = localStorage.getItem('akada-panini-owner-name') || DEFAULT_OWNER_NAME;
+let viewingOwnerId = Number(localStorage.getItem('akada-panini-view-owner-id') || 0);
+let viewingOwnerName = localStorage.getItem('akada-panini-view-owner-name') || '';
 let carouselTimer = null;
 let spotlightTimer = null;
 
@@ -622,6 +639,16 @@ async function loadReferenceCache(){
   }
 }
 function saveOwnerChoice(){localStorage.setItem('akada-panini-owner-id',String(currentOwnerId||''));localStorage.setItem('akada-panini-owner-name',currentOwnerName||'')}
+function saveViewChoice(){localStorage.setItem('akada-panini-view-owner-id',String(viewingOwnerId||''));localStorage.setItem('akada-panini-view-owner-name',viewingOwnerName||'')}
+function isReadOnlyView(){return Number(viewingOwnerId||0)!==Number(currentOwnerId||0)}
+function setViewingOwner(o){
+  if(!o)return;
+  viewingOwnerId=Number(o.owner_id);
+  viewingOwnerName=o.nom;
+  saveViewChoice();
+  renderOwnerTabs();
+  return loadCloud();
+}
 
 function ownerPassword(o){return String(o?.mot_de_passe ?? '').trim()}
 function ownerUnlockedKey(id){return `akada-panini-owner-unlocked-${id}`}
@@ -648,7 +675,10 @@ async function activateOwner(o){
   if(!(await askOwnerPassword(o)))return;
   currentOwnerId=Number(o.owner_id);
   currentOwnerName=o.nom;
+  viewingOwnerId=Number(o.owner_id);
+  viewingOwnerName=o.nom;
   saveOwnerChoice();
+  saveViewChoice();
   renderOwnerTabs();
   await loadCloud();
 }
@@ -699,6 +729,8 @@ async function loadRefs(){
 
   let selected = owners.find(o=>Number(o.owner_id)===currentOwnerId) || owners.find(o=>o.nom===currentOwnerName) || owners.find(o=>o.nom===DEFAULT_OWNER_NAME) || owners[0];
   if(selected){currentOwnerId=Number(selected.owner_id);currentOwnerName=selected.nom;saveOwnerChoice()}
+  let viewed = owners.find(o=>Number(o.owner_id)===viewingOwnerId) || owners.find(o=>o.nom===viewingOwnerName) || selected;
+  if(viewed){viewingOwnerId=Number(viewed.owner_id);viewingOwnerName=viewed.nom;saveViewChoice()}
   renderOwnerTabs();
   renderCountrySelect();
 }
@@ -746,12 +778,21 @@ function syncCloudNameFromReference(){
 }
 
 function renderOwnerTabs(){
-  const zone=document.getElementById('ownerZone');if(!zone)return;
-  zone.innerHTML=owners.map(o=>`<button class="owner-tab ${Number(o.owner_id)===Number(currentOwnerId)?'active':''}" data-owner-id="${Number(o.owner_id)}">👤 ${esc(o.nom)}</button>`).join('')+'<button class="owner-tab owner-add" id="addOwner">+ Créer un album</button>';
-  zone.querySelectorAll('[data-owner-id]').forEach(b=>b.onclick=async()=>{const o=owners.find(x=>Number(x.owner_id)===Number(b.dataset.ownerId));await activateOwner(o)});
-  document.getElementById('addOwner').onclick=addOwner;
+  const zone=document.getElementById('ownerZone');
+  if(zone){
+    zone.innerHTML=owners.map(o=>`<button class="owner-tab ${Number(o.owner_id)===Number(currentOwnerId)?'active':''}" data-owner-id="${Number(o.owner_id)}">🔐 ${esc(o.nom)}</button>`).join('')+'<button class="owner-tab owner-add" id="addOwner">+ Créer un album</button>';
+    zone.querySelectorAll('[data-owner-id]').forEach(b=>b.onclick=async()=>{const o=owners.find(x=>Number(x.owner_id)===Number(b.dataset.ownerId));await activateOwner(o)});
+    document.getElementById('addOwner').onclick=addOwner;
+  }
+  const viewer=document.getElementById('viewerZone');
+  if(viewer){
+    viewer.innerHTML='<span class="viewer-label">Voir l\'album de</span>'+owners.map(o=>`<button class="view-tab ${Number(o.owner_id)===Number(viewingOwnerId)?'active':''}" data-view-owner-id="${Number(o.owner_id)}">👀 ${esc(o.nom)}</button>`).join('');
+    viewer.querySelectorAll('[data-view-owner-id]').forEach(b=>b.onclick=async()=>{const o=owners.find(x=>Number(x.owner_id)===Number(b.dataset.viewOwnerId));await setViewingOwner(o)});
+  }
   const lab=document.getElementById('activeOwnerLabel');if(lab)lab.textContent=currentOwnerName;
+  const vlab=document.getElementById('viewOwnerLabel');if(vlab)vlab.textContent=viewingOwnerName || currentOwnerName;
 }
+
 
 async function addOwner(){
   const values = await openAppDialog({
@@ -775,18 +816,23 @@ async function addOwner(){
     const created=(await r.json())[0];
     if(String(mot_de_passe).trim())sessionStorage.setItem(ownerUnlockedKey(created.owner_id),'1');
     await loadRefs();
-    currentOwnerId=Number(created.owner_id);currentOwnerName=created.nom;saveOwnerChoice();renderOwnerTabs();await loadCloud();
+    currentOwnerId=Number(created.owner_id);currentOwnerName=created.nom;viewingOwnerId=Number(created.owner_id);viewingOwnerName=created.nom;saveOwnerChoice();saveViewChoice();renderOwnerTabs();await loadCloud();
   }catch(e){await showAppMessage('Erreur création compte',String(e.message||e).slice(0,300))}
 }
 
 async function loadCloud(){
   const el=document.getElementById('cloudContent');if(!el)return;
-  if(!currentOwnerId){el.innerHTML='<div class="cloud-error">Aucun album trouvé dans la table Owner. Ajoute au moins: Maé, Robin et Lenny.</div>';renderShowcaseFallback();return}
+  if(!viewingOwnerId) viewingOwnerId=currentOwnerId;
+  if(!viewingOwnerName) viewingOwnerName=currentOwnerName;
+  if(!viewingOwnerId){el.innerHTML='<div class="cloud-error">Aucun album trouvé dans la table Owner. Ajoute au moins: Maé, Robin et Lenny.</div>';renderShowcaseFallback();return}
   const lab=document.getElementById('activeOwnerLabel');if(lab)lab.textContent=currentOwnerName;
+  const vlab=document.getElementById('viewOwnerLabel');if(vlab)vlab.textContent=viewingOwnerName || currentOwnerName;
+  const panel=document.getElementById('cloudPanel'); if(panel)panel.classList.toggle('is-readonly', isReadOnlyView());
+  const banner=document.getElementById('readonlyBanner'); if(banner)banner.classList.toggle('show', isReadOnlyView());
   el.innerHTML='<div class="cloud-empty">Chargement Supabase...</div>';
   try{
     await loadReferenceCache();
-    const r=await api(`${SUPABASE_TABLE}?select=*&owner_id=eq.${currentOwnerId}&order=country_id.asc&order=sticker_number.asc`);
+    const r=await api(`${SUPABASE_TABLE}?select=*&owner_id=eq.${viewingOwnerId}&order=country_id.asc&order=sticker_number.asc`);
     if(!r.ok)throw new Error(await r.text());
     cloudRows=(await r.json()).map(enrichPaniniRow);
     renderCloud();
@@ -846,7 +892,7 @@ function renderCloudAlbum(rows,title){
 
 function renderTechnicalList(rows,type){
   if(!rows.length)return `<div class="cloud-empty">Rien dans cette liste.</div>`;
-  return rows.map(r=>`<div class="cloud-row"><div><b>${esc(countryCode(r.country_id))} ${esc(r.sticker_number)}</b><br><small>${esc(stickerName(r))}${r.note?' - '+esc(r.note):''}</small></div><span class="cloud-badge missing">M ×${normQty(r.quantity_missing)}</span><span class="cloud-badge double">D ×${normQty(r.quantity_double)}</span><button class="cloud-delete" onclick="deleteCloudItem(${Number(r.id)})">Supprimer</button></div>`).join('');
+  return rows.map(r=>`<div class="cloud-row"><div><b>${esc(countryCode(r.country_id))} ${esc(r.sticker_number)}</b><br><small>${esc(stickerName(r))}${r.note?' - '+esc(r.note):''}</small></div><span class="cloud-badge missing">M ×${normQty(r.quantity_missing)}</span><span class="cloud-badge double">D ×${normQty(r.quantity_double)}</span>${isReadOnlyView() ? '' : `<button class="cloud-delete" onclick="deleteCloudItem(${Number(r.id)})">Supprimer</button>`}</div>`).join('');
 }
 
 function renderCloud(){
@@ -858,7 +904,7 @@ function renderCloud(){
   document.getElementById('cloudCountryTotal').textContent=countrySet.size;
   updateStats();
   const rows=cloudRowsForTab();
-  if(!rows.length){el.innerHTML=`<div class="cloud-empty">Aucune vignette pour ${esc(currentOwnerName)}.</div>`;return}
+  if(!rows.length){el.innerHTML=`<div class="cloud-empty">Aucune vignette pour ${esc(viewingOwnerName || currentOwnerName)}.</div>`;return}
   const title = cloudTab==='double' ? 'Album des doubles' : (cloudTab==='graph' ? 'Album par pays' : 'Album des manquants');
   const album = renderCloudAlbum(rows,title);
   const listRows = cloudTab==='missing' ? missing : (cloudTab==='double' ? doubles : cloudRows.filter(r=>normQty(r.quantity_missing)>0||normQty(r.quantity_double)>0||normQty(r.sticker_special)>0));
@@ -920,7 +966,7 @@ function parseHighlightText(row, code){
 }
 
 function spotlightSpecialRows(){
-  const own = cloudRows.filter(r => Number(r.owner_id) === Number(currentOwnerId) && normQty(r.sticker_special) > 0);
+  const own = cloudRows.filter(r => Number(r.owner_id) === Number(viewingOwnerId) && normQty(r.sticker_special) > 0);
   if(own.length)return own;
   return cloudRows.filter(r => normQty(r.sticker_special) > 0);
 }
@@ -999,7 +1045,7 @@ function renderShowcaseFallback(){
       <span class="card-rank">Special</span>
       <div class="legend-photo"><div class="shirt">⭐</div></div>
       <div class="legend-name">Highlight</div>
-      <div class="legend-meta">${esc(currentOwnerName || DEFAULT_OWNER_NAME)}</div>
+      <div class="legend-meta">${esc(viewingOwnerName || currentOwnerName || DEFAULT_OWNER_NAME)}</div>
     </div>
   </div>
   <div class="legend-copy">
@@ -1064,11 +1110,13 @@ function openCloudCard(id){
     highlightBtn.onclick=()=>toggleCurrentHighlight();
   }
   refreshQtyControls();
-  document.getElementById('missingMinus')?.addEventListener('click',()=>changeCurrentQty('missing',-1));
-  document.getElementById('missingPlus')?.addEventListener('click',()=>changeCurrentQty('missing',1));
-  document.getElementById('doubleMinus')?.addEventListener('click',()=>changeCurrentQty('double',-1));
-  document.getElementById('doublePlus')?.addEventListener('click',()=>changeCurrentQty('double',1));
-  document.getElementById('modal')?.classList.add('open');
+  const modal=document.getElementById('modal');
+  if(modal)modal.classList.toggle('is-readonly', isReadOnlyView());
+  const mm=document.getElementById('missingMinus'); if(mm)mm.onclick=()=>changeCurrentQty('missing',-1);
+  const mp=document.getElementById('missingPlus'); if(mp)mp.onclick=()=>changeCurrentQty('missing',1);
+  const dm=document.getElementById('doubleMinus'); if(dm)dm.onclick=()=>changeCurrentQty('double',-1);
+  const dp=document.getElementById('doublePlus'); if(dp)dp.onclick=()=>changeCurrentQty('double',1);
+  modal?.classList.add('open');
 }
 
 function refreshQtyControls(){
@@ -1086,6 +1134,7 @@ function refreshQtyControls(){
 }
 
 async function changeCurrentQty(kind,delta){
+  if(isReadOnlyView()){await showAppMessage('Lecture seule','Impossible de modifier un autre album.');return;}
   if(!current || !current.id)return;
   const field = kind==='double' ? 'quantity_double' : 'quantity_missing';
   const currentQty=normQty(current[field]);
@@ -1113,6 +1162,7 @@ async function changeCurrentQty(kind,delta){
 }
 
 async function toggleCurrentHighlight(){
+  if(isReadOnlyView()){await showAppMessage('Lecture seule','Impossible de modifier un autre album.');return;}
   if(!current || !current.id)return;
   const btn=document.getElementById('setHighlightBtn');
   const note=(document.getElementById('mHighlightNote')?.value || '').trim();
@@ -1183,9 +1233,10 @@ async function openTradePanel(){
   }
 }
 
-async function openCloudForm(mode){cloudMode=mode;document.getElementById('cloudFormTitle').textContent=mode==='missing'?'Nouveau manque':'Nouveau double';document.getElementById('cloudForm').classList.add('open');try{await loadReferenceCache()}catch(e){} updateStickerNumberOptions();document.getElementById('cloudCountry').focus()}
+async function openCloudForm(mode){if(isReadOnlyView()){await showAppMessage('Lecture seule','Tu consultes un autre album. Reviens sur ton album actif pour modifier.');return;}cloudMode=mode;document.getElementById('cloudFormTitle').textContent=mode==='missing'?'Nouveau manque':'Nouveau double';document.getElementById('cloudForm').classList.add('open');try{await loadReferenceCache()}catch(e){} updateStickerNumberOptions();document.getElementById('cloudCountry').focus()}
 function closeCloudForm(){document.getElementById('cloudForm').classList.remove('open')}
 async function saveCloudItem(){
+  if(isReadOnlyView()){await showAppMessage('Lecture seule','Impossible de modifier un autre album.');return;}
   const country_id=Number(document.getElementById('cloudCountry').value);
   const sticker_number=Number(document.getElementById('cloudNumber').value);
   const qty=Math.max(1,Number(document.getElementById('cloudQty').value||1));
@@ -1230,7 +1281,7 @@ async function saveCloudItem(){
   }catch(e){await showAppMessage('Erreur Supabase',String(e.message||e).slice(0,500))}
   finally{btn.disabled=false;btn.textContent='Enregistrer'}
 }
-async function deleteCloudItem(id){if(!confirm('Supprimer cette ligne ?'))return;try{const r=await api(`${SUPABASE_TABLE}?id=eq.${id}`,{method:'DELETE'});if(!r.ok)throw new Error(await r.text());await loadCloud()}catch(e){alert('Erreur suppression: '+String(e.message||e).slice(0,250))}}
+async function deleteCloudItem(id){if(isReadOnlyView()){await showAppMessage('Lecture seule','Impossible de supprimer dans un autre album.');return;}if(!confirm('Supprimer cette ligne ?'))return;try{const r=await api(`${SUPABASE_TABLE}?id=eq.${id}`,{method:'DELETE'});if(!r.ok)throw new Error(await r.text());await loadCloud()}catch(e){alert('Erreur suppression: '+String(e.message||e).slice(0,250))}}
 
 document.addEventListener('DOMContentLoaded',async()=>{
   renderShowcaseFallback();
